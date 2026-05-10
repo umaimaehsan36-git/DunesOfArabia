@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DunesOfArabia.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260508181950_InitialCreate")]
+    [Migration("20260510182715_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -44,9 +44,8 @@ namespace DunesOfArabia.Migrations
                     b.Property<int>("DestinationId")
                         .HasColumnType("int");
 
-                    b.Property<string>("DurationHours")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<decimal>("DurationHours")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -56,6 +55,8 @@ namespace DunesOfArabia.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DestinationId");
 
                     b.ToTable("Activities");
                 });
@@ -80,7 +81,6 @@ namespace DunesOfArabia.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("FullName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("LockoutEnabled")
@@ -97,15 +97,7 @@ namespace DunesOfArabia.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<string>("PassportNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("PasswordHash")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Phone")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
@@ -113,10 +105,6 @@ namespace DunesOfArabia.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
@@ -175,6 +163,8 @@ namespace DunesOfArabia.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DestinationId");
+
                     b.ToTable("Bookings");
                 });
 
@@ -220,7 +210,6 @@ namespace DunesOfArabia.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AdminResponse")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
@@ -438,6 +427,8 @@ namespace DunesOfArabia.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DestinationId");
+
                     b.ToTable("Reviews");
                 });
 
@@ -457,6 +448,8 @@ namespace DunesOfArabia.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DestinationId");
 
                     b.ToTable("UserFavorites");
                 });
@@ -541,10 +534,12 @@ namespace DunesOfArabia.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
                     b.Property<string>("LoginProvider")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("ProviderKey")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("ProviderDisplayName")
                         .HasColumnType("nvarchar(max)");
@@ -581,10 +576,12 @@ namespace DunesOfArabia.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("LoginProvider")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("Name")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("Value")
                         .HasColumnType("nvarchar(max)");
@@ -594,22 +591,44 @@ namespace DunesOfArabia.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("DunesOfArabia.Models.BookingDocument", b =>
+            modelBuilder.Entity("DunesOfArabia.Models.Activity", b =>
                 {
-                    b.HasOne("DunesOfArabia.Models.Booking", null)
-                        .WithMany("Documents")
-                        .HasForeignKey("BookingId")
+                    b.HasOne("DunesOfArabia.Models.Destination", null)
+                        .WithMany()
+                        .HasForeignKey("DestinationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("DunesOfArabia.Models.Booking", b =>
+                {
+                    b.HasOne("DunesOfArabia.Models.Destination", null)
+                        .WithMany()
+                        .HasForeignKey("DestinationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("DunesOfArabia.Models.BookingDocument", b =>
+                {
+                    b.HasOne("DunesOfArabia.Models.Booking", "Booking")
+                        .WithMany("Documents")
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
+                });
+
             modelBuilder.Entity("DunesOfArabia.Models.DailyActivity", b =>
                 {
-                    b.HasOne("DunesOfArabia.Models.Itinerary", null)
+                    b.HasOne("DunesOfArabia.Models.Itinerary", "Itinerary")
                         .WithMany("Activities")
                         .HasForeignKey("ItineraryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Itinerary");
                 });
 
             modelBuilder.Entity("DunesOfArabia.Models.PackingItem", b =>
@@ -617,6 +636,24 @@ namespace DunesOfArabia.Migrations
                     b.HasOne("DunesOfArabia.Models.Itinerary", null)
                         .WithMany("PackingItems")
                         .HasForeignKey("ItineraryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("DunesOfArabia.Models.Review", b =>
+                {
+                    b.HasOne("DunesOfArabia.Models.Destination", null)
+                        .WithMany()
+                        .HasForeignKey("DestinationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("DunesOfArabia.Models.UserFavorite", b =>
+                {
+                    b.HasOne("DunesOfArabia.Models.Destination", null)
+                        .WithMany()
+                        .HasForeignKey("DestinationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

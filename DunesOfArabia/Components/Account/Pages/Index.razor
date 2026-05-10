@@ -1,0 +1,318 @@
+﻿@page "/"
+@using DunesOfArabia.Models
+
+<style>
+    .hero-section {
+        min-height: 100vh;
+        background: linear-gradient(135deg, rgba(139, 90, 60, 0.8) 0%, rgba(92, 61, 46, 0.8) 100%), url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200');
+        background-size: cover;
+        background-position: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        text-align: center;
+    }
+
+    .hero-content {
+        max-width: 800px;
+        padding: 2rem;
+    }
+
+        .hero-content h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-family: Georgia, serif;
+            letter-spacing: 2px;
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+
+    .button-group {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-primary {
+        padding: 14px 40px;
+        font-size: 1.05rem;
+        background-color: #8B5A3C;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-block;
+    }
+
+        .btn-primary:hover {
+            background-color: #5C3D2E;
+            transform: translateY(-2px);
+        }
+
+    .btn-secondary {
+        padding: 12px 38px;
+        font-size: 1.05rem;
+        background-color: transparent;
+        color: white;
+        border: 2px solid white;
+        border-radius: 4px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-block;
+    }
+
+        .btn-secondary:hover {
+            background-color: white;
+            color: #8B5A3C;
+        }
+
+    .featured-section {
+        padding: 4rem 2rem;
+        background-color: white;
+        text-align: center;
+    }
+
+        .featured-section h2 {
+            font-family: Georgia, serif;
+            color: #5C3D2E;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+        }
+
+    .destinations-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .destination-card {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+        .destination-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .destination-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+    .destination-info {
+        padding: 1.5rem;
+    }
+
+    .destination-category {
+        display: inline-block;
+        background-color: #8B5A3C;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .destination-province {
+        display: inline-block;
+        background-color: #F5F1E8;
+        color: #5C3D2E;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin-left: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .destination-name {
+        font-size: 1.3rem;
+        color: #5C3D2E;
+        margin: 0.5rem 0;
+        font-family: Georgia, serif;
+    }
+
+    .destination-rating {
+        color: #D4A574;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .destination-description {
+        color: #666;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin-bottom: 1rem;
+    }
+
+    .destination-button {
+        background-color: transparent;
+        color: #8B5A3C;
+        border: 2px solid #8B5A3C;
+        padding: 8px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+        .destination-button:hover {
+            background-color: #8B5A3C;
+            color: white;
+        }
+
+    .footer {
+        background-color: #5C3D2E;
+        color: white;
+        padding: 3rem 2rem;
+        text-align: center;
+    }
+
+    .footer-content {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .footer-links {
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+
+        .footer-links a {
+            color: #D4A574;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+            .footer-links a:hover {
+                color: white;
+            }
+</style>
+
+<!-- HERO SECTION -->
+<div class="hero-section">
+    <div class="hero-content">
+        <h1>Discover the Magic of Saudi Arabia</h1>
+        <p>Experience the wonders of Saudi Arabia with curated travel guides, immersive cultural experiences, and unforgettable adventures.</p>
+        <div class="button-group">
+            <a href="/destinations" class="btn-primary">Explore Destinations</a>
+            <a href="/planner" class="btn-secondary">Plan a Trip</a>
+        </div>
+    </div>
+</div>
+
+<!-- FEATURED SECTION -->
+<div class="featured-section">
+    <h2>Featured Destinations</h2>
+    <div style="margin-bottom: 2rem;">
+        <button style="background-color: #8B5A3C; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-right: 0.5rem; cursor: pointer;">All Destinations</button>
+        <button style="background-color: transparent; color: #999; border: none; padding: 8px 16px; cursor: pointer;">Historical</button>
+        <button style="background-color: transparent; color: #999; border: none; padding: 8px 16px; cursor: pointer;">Nature</button>
+        <button style="background-color: transparent; color: #999; border: none; padding: 8px 16px; cursor: pointer;">Coastal</button>
+        <button style="background-color: transparent; color: #999; border: none; padding: 8px 16px; cursor: pointer;">Urban</button>
+    </div>
+    <div class="destinations-grid">
+        <div class="destination-card">
+            <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400" alt="AlUla" />
+            <div class="destination-info">
+                <div>
+                    <span class="destination-category">HISTORICAL</span>
+                    <span class="destination-province">Al Madinah Province</span>
+                </div>
+                <h3 class="destination-name">AlUla</h3>
+                <div class="destination-rating">⭐ 4.9</div>
+                <p class="destination-description">Explore the ancient Nabatean tombs of Hegra and the breathtaking desert.</p>
+                <a href="/destinations/1" class="destination-button">View Details</a>
+            </div>
+        </div>
+        <div class="destination-card">
+            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400" alt="Red Sea" />
+            <div class="destination-info">
+                <div>
+                    <span class="destination-category">COASTAL</span>
+                    <span class="destination-province">Tabuk Province</span>
+                </div>
+                <h3 class="destination-name">The Red Sea</h3>
+                <div class="destination-rating">⭐ 4.8</div>
+                <p class="destination-description">A sustainable luxury destination featuring pristine islands and world-class diving.</p>
+                <a href="/destinations/3" class="destination-button">View Details</a>
+            </div>
+        </div>
+        <div class="destination-card">
+            <img src="https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400" alt="Riyadh" />
+            <div class="destination-info">
+                <div>
+                    <span class="destination-category">URBAN</span>
+                    <span class="destination-province">Riyadh Province</span>
+                </div>
+                <h3 class="destination-name">Riyadh</h3>
+                <div class="destination-rating">⭐ 4.7</div>
+                <p class="destination-description">The vibrant heart of the Kingdom where modernity meets centuries of history.</p>
+                <a href="/destinations/5" class="destination-button">View Details</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- HOSPITALITY SECTION -->
+<div style="background-color: #F5F1E8; padding: 4rem 2rem;">
+    <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center;">
+        <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=500" alt="Saudi Host" style="border-radius: 8px;" />
+        <div>
+            <h2 style="font-family: Georgia, serif; color: #5C3D2E; margin-bottom: 1rem;">LEGENDARY HOSPITALITY</h2>
+            <p style="color: #666; margin-bottom: 1rem;">Ancient Warmth, Modern Comfort</p>
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="color: #5C3D2E; margin-bottom: 0.5rem;">🍽️ Authentic Gastronomy</h4>
+                <p style="color: #666;">Savor flavors reimagined by world-class chefs.</p>
+            </div>
+            <div>
+                <h4 style="color: #5C3D2E; margin-bottom: 0.5rem;">🏨 Unparalleled Luxury</h4>
+                <p style="color: #666;">Exotic stays that blend natural surroundings.</p>
+            </div>
+            <a href="#" style="color: #8B5A3C; text-decoration: none; font-weight: 600; margin-top: 1rem; display: inline-block;">Learn more about our culture →</a>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="footer-content">
+        <h3 style="margin-bottom: 1rem;">SAUDI HERITAGE</h3>
+        <p style="margin-bottom: 2rem;">Preserving the soul of Arabia while welcoming the world with visionary experiences.</p>
+        <div class="footer-links">
+            <a href="#about">About Us</a>
+            <a href="#destinations">Destinations</a>
+            <a href="#contact">Contact</a>
+            <a href="#plan">Plan a Trip</a>
+            <a href="#privacy">Privacy Policy</a>
+            <a href="#terms">Terms of Use</a>
+        </div>
+        <p style="color: #999; margin-top: 2rem;">© 2024 Saudi Arabia Travel Bureau. Modern Heritage.</p>
+    </div>
+</footer>
+
+@code {
+
+}

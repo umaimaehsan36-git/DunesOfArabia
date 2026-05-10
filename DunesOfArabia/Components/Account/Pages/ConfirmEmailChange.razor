@@ -1,4 +1,4 @@
-﻿@page "/Account/ConfirmEmailChange"
+@page "/Account/ConfirmEmailChange"
 
 @using System.Text
 @using Microsoft.AspNetCore.Identity
@@ -42,7 +42,9 @@
         var user = await UserManager.FindByIdAsync(UserId);
         if (user is null)
         {
-            message = "Unable to find user with Id '{userId}'";
+            // FIX #13: Was "Unable to find user with Id '{userId}'" — the {userId}
+            // was a literal string, not interpolated. Now uses $"..." with UserId.
+            message = $"Unable to find user with Id '{UserId}'";
             return;
         }
 
@@ -54,8 +56,7 @@
             return;
         }
 
-        // In our UI email and user name are one and the same, so when we update the email
-        // we need to update the user name.
+        // Email and username are the same in this app, so update both together
         var setUserNameResult = await UserManager.SetUserNameAsync(user, Email);
         if (!setUserNameResult.Succeeded)
         {

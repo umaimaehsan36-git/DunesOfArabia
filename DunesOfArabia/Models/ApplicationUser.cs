@@ -4,9 +4,7 @@ namespace DunesOfArabia.Models
 {
     public class ApplicationUser : IdentityUser
     {
-        public string FullName { get; set; }
-        public string Phone { get; set; }
-        public string PassportNumber { get; set; }
-        public string Role { get; set; } = "User"; // "User" or "Admin"
+        // You can extend later
+        public string? FullName { get; set; }
     }
 }

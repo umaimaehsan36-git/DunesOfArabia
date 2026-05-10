@@ -1,5 +1,6 @@
-﻿@using System.Net.Http
-@using System.Net.Http.Json
+@using System.Net.Http
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Routing
@@ -7,7 +8,23 @@
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
 @using Microsoft.AspNetCore.Components.Web.Virtualization
 @using Microsoft.JSInterop
+
+@* FIX 1: Added Microsoft.AspNetCore.Components.Web — this is what provides
+   PageTitle, HeadOutlet, FocusOnNavigate, and other built-in Blazor web components.
+   Without it every page shows: "Found markup element with unexpected name 'PageTitle'" *@
+
+@* FIX 2: Added Microsoft.AspNetCore.Authorization — needed for [Authorize]
+   attribute and AuthorizeView to resolve correctly across all pages *@
+
+@* FIX 3: Added static RenderMode import — needed for @rendermode InteractiveServer
+   syntax used in Counter.razor and other interactive components *@
+
 @using DunesOfArabia
+@using DunesOfArabia.Models
+@using DunesOfArabia.Data
 @using DunesOfArabia.Components
 @using DunesOfArabia.Components.Layout
-@using DunesOfArabia.Models
+@using DunesOfArabia.Components.Pages
+@using DunesOfArabia.Components.Account.Shared
+@using DunesOfArabia.Components.Account.Pages.Manage
+@using Microsoft.AspNetCore.Authentication

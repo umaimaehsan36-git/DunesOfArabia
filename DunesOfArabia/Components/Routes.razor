@@ -1,8 +1,22 @@
-﻿@using DunesOfArabia.Components.Account.Shared
-<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+@using DunesOfArabia.Components.Account.Shared
+@using DunesOfArabia.Components.Pages
+@using DunesOfArabia.Components.Layout
+
+@* FIX 5: Added @using DunesOfArabia.Components.Pages so that Pages.NotFound
+   resolves. Without it the compiler can't find the NotFound type.
+
+   FIX 6: Changed NotFoundPage="typeof(Pages.NotFound)" to
+   NotFoundPage="typeof(NotFound)" since we now @using the Pages namespace directly.
+   The old syntax only works if you haven't imported the namespace, which conflicts
+   with the _Imports.razor we just fixed. *@
+
+<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(NotFound)">
     <Found Context="routeData">
-        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)">
             <NotAuthorized>
+                @* FIX 7: RedirectToLogin is a component from Account.Shared —
+                   the @using above makes sure it resolves. If you don't have
+                   this component yet, see the note below. *@
                 <RedirectToLogin />
             </NotAuthorized>
         </AuthorizeRouteView>
