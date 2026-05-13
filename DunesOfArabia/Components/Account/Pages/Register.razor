@@ -15,10 +15,10 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Register � Dunes Of Arabia</PageTitle>
+<PageTitle>Register – Dunes Of Arabia</PageTitle>
 
 <style>
-    * {
+    *, *::before, *::after {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
@@ -26,143 +26,203 @@
 
     .auth-container {
         min-height: 100vh;
-        background: linear-gradient(135deg, #8B5A3C 0%, #5C3D2E 100%);
+        background-color: #EDE8DF;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 2rem;
+        padding: 2.5rem 1.5rem;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
-    .auth-card {
-        background-color: white;
-        border-radius: 12px;
-        padding: 3rem;
-        max-width: 450px;
-        width: 100%;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2rem;
     }
 
-        .auth-card h1 {
-            text-align: center;
-            font-family: Georgia, serif;
-            color: #5C3D2E;
-            margin-bottom: 0.5rem;
-            font-size: 2rem;
-        }
+    .auth-header h1 {
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 2.6rem;
+        color: #6B2D1A;
+        letter-spacing: 3px;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+    }
 
-        .auth-card .subtitle {
-            text-align: center;
-            color: #8a7060;
-            margin-bottom: 2rem;
-            font-size: 0.95rem;
-        }
+    .auth-header p {
+        font-size: 1rem;
+        color: #7A6658;
+        letter-spacing: 0.3px;
+    }
+
+    .auth-card {
+        background-color: #ffffff;
+        border-radius: 14px;
+        padding: 2.8rem 2.5rem 2.2rem;
+        max-width: 490px;
+        width: 100%;
+        box-shadow: 0 4px 32px rgba(90, 55, 35, 0.10);
+    }
+
+    .auth-card h2 {
+        text-align: center;
+        font-family: Georgia, 'Times New Roman', serif;
+        color: #3B2114;
+        margin-bottom: 2rem;
+        font-size: 1.75rem;
+        font-weight: 600;
+    }
+
+    .alert-error {
+        background-color: #fdf0f0;
+        color: #8B1A1A;
+        border: 1px solid #f5c6cb;
+        border-radius: 8px;
+        padding: 0.85rem 1rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.875rem;
+    }
+
+    .validation-summary {
+        background-color: #fdf0f0;
+        color: #8B1A1A;
+        border: 1px solid #f5c6cb;
+        border-radius: 8px;
+        padding: 0.85rem 1rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.875rem;
+    }
 
     .form-group {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.6rem;
     }
 
     .form-label {
         display: block;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.55rem;
         font-weight: 600;
-        color: #5C3D2E;
-        font-size: 0.95rem;
+        color: #2E1A0E;
+        font-size: 0.9rem;
+    }
+
+    .form-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1.5px solid #D5C9BC;
+        padding-bottom: 8px;
+        transition: border-color 0.2s ease;
+    }
+
+    .form-input-wrapper:focus-within {
+        border-bottom-color: #7B3121;
+    }
+
+    .field-icon {
+        flex-shrink: 0;
+        color: #7A6658;
+        display: flex;
+        align-items: center;
     }
 
     .form-input {
-        width: 100%;
-        padding: 12px 15px;
-        border: 2px solid #E8DCC8;
-        border-radius: 4px;
-        font-size: 1rem;
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 0.95rem;
         font-family: inherit;
-        transition: all 0.3s ease;
-        background-color: white;
+        background: transparent;
+        color: #2E1A0E;
+        padding: 0;
     }
 
-        .form-input:focus {
-            outline: none;
-            border-color: #8B5A3C;
-            box-shadow: 0 0 0 3px rgba(139, 90, 60, 0.1);
-        }
+    .form-input::placeholder {
+        color: #B0A090;
+    }
 
-        .form-input::placeholder {
-            color: #999;
-        }
-
-    .alert-error {
-        background-color: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-        border-radius: 4px;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
+    .validation-error {
+        color: #B91C1C;
+        font-size: 0.78rem;
+        margin-top: 0.35rem;
+        display: block;
     }
 
     .btn-primary {
         width: 100%;
         padding: 14px;
-        background-color: #8B5A3C;
-        color: white;
+        background-color: #7B3121;
+        color: #fff;
         border: none;
-        border-radius: 4px;
-        font-size: 1.05rem;
+        border-radius: 8px;
+        font-size: 0.95rem;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s ease;
-        letter-spacing: 0.5px;
-        margin-top: 1rem;
+        letter-spacing: 0.4px;
+        margin-top: 2rem;
+        transition: background-color 0.2s ease, transform 0.15s ease;
     }
 
-        .btn-primary:hover {
-            background-color: #5C3D2E;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(139, 90, 60, 0.3);
-        }
+    .btn-primary:hover {
+        background-color: #5C2218;
+        transform: translateY(-1px);
+    }
 
-        .btn-primary:active {
-            transform: translateY(0);
-        }
+    .btn-primary:active {
+        transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+        background-color: #C4A898;
+        cursor: not-allowed;
+        transform: none;
+    }
 
     .auth-footer {
         text-align: center;
+        margin-top: 1.75rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #EDE0D4;
+        color: #7A6658;
+        font-size: 0.9rem;
+    }
+
+    .auth-footer a {
+        color: #7B3121;
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    .auth-footer a:hover {
+        text-decoration: underline;
+    }
+
+    .terms-footer {
+        text-align: center;
         margin-top: 1.5rem;
-        color: #8a7060;
-        font-size: 0.95rem;
-    }
-
-        .auth-footer a {
-            color: #8B5A3C;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-            .auth-footer a:hover {
-                text-decoration: underline;
-            }
-
-    .validation-error {
-        color: #dc3545;
+        color: #9A8878;
         font-size: 0.8rem;
-        margin-top: 0.25rem;
-        display: block;
+        line-height: 1.7;
     }
 
-    .validation-summary {
-        background-color: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-        border-radius: 4px;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
+    .terms-footer a {
+        color: #7B3121;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .terms-footer a:hover {
+        text-decoration: underline;
     }
 </style>
 
 <div class="auth-container">
+    <div class="auth-header">
+        <h1>SAUDI HERITAGE</h1>
+        <p>Begin your journey with us</p>
+    </div>
+
     <div class="auth-card">
-        <h1>Create Account</h1>
-        <p class="subtitle">Join our heritage journey</p>
+        <h2>Create Account</h2>
 
         @if (Message != null)
         {
@@ -175,47 +235,79 @@
 
             <div class="form-group">
                 <label class="form-label" for="Input.FullName">Full Name</label>
-                <InputText @bind-value="Input.FullName"
-                           id="Input.FullName"
-                           class="form-input"
-                           autocomplete="name"
-                           aria-required="true"
-                           placeholder="Your full name" />
+                <div class="form-input-wrapper">
+                    <span class="field-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="8" r="4"/>
+                            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                        </svg>
+                    </span>
+                    <InputText @bind-Value="Input.FullName"
+                               id="Input.FullName"
+                               class="form-input"
+                               autocomplete="name"
+                               aria-required="true"
+                               placeholder="John Doe" />
+                </div>
                 <ValidationMessage For="() => Input.FullName" class="validation-error" />
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="Input.Email">Email Address</label>
-                <InputText @bind-value="Input.Email"
-                           id="Input.Email"
-                           class="form-input"
-                           autocomplete="username"
-                           aria-required="true"
-                           placeholder="your@email.com" />
+                <div class="form-input-wrapper">
+                    <span class="field-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="4" width="20" height="16" rx="2"/>
+                            <path d="M2 7l10 7 10-7"/>
+                        </svg>
+                    </span>
+                    <InputText @bind-Value="Input.Email"
+                               id="Input.Email"
+                               class="form-input"
+                               autocomplete="username"
+                               aria-required="true"
+                               placeholder="your.email@example.com" />
+                </div>
                 <ValidationMessage For="() => Input.Email" class="validation-error" />
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="Input.Password">Password</label>
-                <InputText type="password"
-                           @bind-value="Input.Password"
-                           id="Input.Password"
-                           class="form-input"
-                           autocomplete="new-password"
-                           aria-required="true"
-                           placeholder="Min 6 characters" />
+                <div class="form-input-wrapper">
+                    <span class="field-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="5" y="11" width="14" height="10" rx="2"/>
+                            <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+                        </svg>
+                    </span>
+                    <InputText type="password"
+                               @bind-Value="Input.Password"
+                               id="Input.Password"
+                               class="form-input"
+                               autocomplete="new-password"
+                               aria-required="true"
+                               placeholder="••••••••" />
+                </div>
                 <ValidationMessage For="() => Input.Password" class="validation-error" />
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="Input.ConfirmPassword">Confirm Password</label>
-                <InputText type="password"
-                           @bind-value="Input.ConfirmPassword"
-                           id="Input.ConfirmPassword"
-                           class="form-input"
-                           autocomplete="new-password"
-                           aria-required="true"
-                           placeholder="Re-enter your password" />
+                <div class="form-input-wrapper">
+                    <span class="field-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="5" y="11" width="14" height="10" rx="2"/>
+                            <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+                        </svg>
+                    </span>
+                    <InputText type="password"
+                               @bind-Value="Input.ConfirmPassword"
+                               id="Input.ConfirmPassword"
+                               class="form-input"
+                               autocomplete="new-password"
+                               aria-required="true"
+                               placeholder="••••••••" />
+                </div>
                 <ValidationMessage For="() => Input.ConfirmPassword" class="validation-error" />
             </div>
 
@@ -225,6 +317,10 @@
         <div class="auth-footer">
             Already have an account? <a href="/Account/Login">Login here</a>
         </div>
+    </div>
+
+    <div class="terms-footer">
+        By creating an account, you agree to our <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>
     </div>
 </div>
 
