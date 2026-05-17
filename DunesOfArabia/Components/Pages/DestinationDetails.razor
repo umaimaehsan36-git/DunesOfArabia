@@ -1,0 +1,895 @@
+@page "/destination/{id:int}"
+@layout DunesOfArabia.Components.Layout.MainLayout
+@rendermode InteractiveServer
+
+@inject IDestinationService DestinationService
+@inject IActivityService ActivityService
+@inject IReviewService ReviewService
+@inject IUserFavoriteService UserFavoriteService
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+
+@using System.Text.Json
+@using System.Security.Claims
+
+<PageTitle>@(destination?.Name ?? "Loading") – Dunes of Arabia</PageTitle>
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@@400;600;700&family=Lato:wght@@300;400;500;600&display=swap');
+
+    /* Brand token — matches Destinations.razor */
+    :root { --brand: #7B3121; --brand-hover: #5C2318; --brand-light: #F5EFE8; }
+
+    .destination-details-page {
+        background: var(--brand-light);
+        min-height: 100vh;
+        font-family: 'Lato', sans-serif;
+    }
+
+    .loading-spinner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+        color: var(--brand);
+    }
+
+    .spinner {
+        border: 4px solid #DDD;
+        border-top: 4px solid var(--brand);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1rem;
+    }
+
+    @@keyframes spin {
+        0%   { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .error-banner {
+        margin: 2rem;
+        padding: 1rem 1.25rem;
+        background: #FFF0EE;
+        border: 1.5px solid #E8A090;
+        border-radius: 8px;
+        color: #7B2010;
+        font-size: 0.9rem;
+    }
+
+    /* ── Hero ── */
+    .hero-section {
+        position: relative;
+        height: 450px;
+        background: linear-gradient(135deg, #DDD 0%, #EEE 100%);
+        overflow: hidden;
+    }
+
+    .hero-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .hero-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+        padding: 3rem 2rem 2rem;
+        color: white;
+    }
+
+    .hero-overlay h1 {
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        margin: 0 0 1rem 0;
+        font-weight: 700;
+        font-family: 'Playfair Display', Georgia, serif;
+    }
+
+    .hero-info {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .rating { font-size: 1.1rem; font-weight: 600; }
+
+    .category-badge {
+        background: rgba(123,49,33,0.9);
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    /* ── Layout ── */
+    .details-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .main-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .info-section, .gallery-section, .map-section,
+    .activities-section, .reviews-section {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .info-section h2, .gallery-section h2, .map-section h2,
+    .activities-section h2, .reviews-section h2 {
+        color: var(--brand);
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+        border-bottom: 2px solid var(--brand);
+        padding-bottom: 0.5rem;
+        font-family: 'Playfair Display', Georgia, serif;
+    }
+
+    .description {
+        color: #555;
+        line-height: 1.8;
+        margin-bottom: 1.5rem;
+    }
+
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .detail-item {
+        background: var(--brand-light);
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid var(--brand);
+        border-radius: 0 8px 8px 0;
+    }
+
+    .detail-item strong { display: block; color: var(--brand); margin-bottom: 0.5rem; }
+    .detail-item p { margin: 0; color: #666; }
+
+    /* ── Gallery ── */
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 1rem;
+    }
+
+    .gallery-item {
+        height: 180px;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.3s;
+    }
+
+    .gallery-item:hover { transform: scale(1.05); }
+
+    .gallery-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* ── Image Modal ── */
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.85);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-img {
+        max-width: 90vw;
+        max-height: 85vh;
+        border-radius: 8px;
+        object-fit: contain;
+    }
+
+    .modal-close {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        background: rgba(255,255,255,0.15);
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* ── Map ── */
+    .map-container {
+        border-radius: 8px;
+        overflow: hidden;
+        height: 380px;
+        border: 1.5px solid #DDD3C8;
+    }
+
+    .map-container iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    /* ── Activities ── */
+    .activities-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .activity-card {
+        background: var(--brand-light);
+        border-radius: 8px;
+        overflow: hidden;
+        transition: transform 0.3s, box-shadow 0.3s;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .activity-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    .activity-image {
+        position: relative;
+        height: 160px;
+        overflow: hidden;
+    }
+
+    .activity-image img { width: 100%; height: 100%; object-fit: cover; }
+
+    .activity-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: #C8873A;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .activity-content { padding: 1rem; flex-grow: 1; display: flex; flex-direction: column; }
+    .activity-content h3 { margin: 0 0 0.5rem 0; color: #333; font-size: 1.1rem; }
+    .activity-desc { color: #666; font-size: 0.9rem; flex-grow: 1; margin: 0 0 1rem 0; }
+
+    .activity-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 1rem;
+    }
+
+    .price { color: var(--brand); font-weight: 600; }
+
+    .btn-view-activity {
+        background: white;
+        border: 2px solid var(--brand);
+        color: var(--brand);
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-view-activity:hover { background: var(--brand); color: white; }
+
+    /* ── Reviews ── */
+    .reviews-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .review-card {
+        background: var(--brand-light);
+        padding: 1.5rem;
+        border-radius: 8px;
+        border-left: 4px solid #C8873A;
+        border-radius: 0 8px 8px 0;
+    }
+
+    .review-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .reviewer-info strong { display: block; color: #333; }
+    .reviewer-info small  { color: #999; }
+    .review-text { color: #666; margin: 0; line-height: 1.6; }
+
+    .star-rating { color: #C8873A; letter-spacing: 2px; }
+
+    .btn-see-more, .btn-write-review {
+        background: white;
+        border: 2px solid var(--brand);
+        color: var(--brand);
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        transition: all 0.3s;
+    }
+
+    .btn-see-more:hover { background: var(--brand); color: white; }
+
+    .btn-write-review {
+        background: var(--brand);
+        color: white;
+        width: 100%;
+    }
+
+    .btn-write-review:hover { background: var(--brand-hover); border-color: var(--brand-hover); }
+
+    .auth-prompt {
+        text-align: center;
+        background: #FFF8DC;
+        padding: 1rem;
+        border-radius: 6px;
+        color: #666;
+    }
+
+    .auth-prompt a { color: var(--brand); text-decoration: none; font-weight: 600; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+    }
+
+    .quick-card, .action-card, .highlights-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .quick-card h3, .action-card h3, .highlights-card h3 {
+        margin-top: 0;
+        color: var(--brand);
+        border-bottom: 2px solid var(--brand);
+        padding-bottom: 0.5rem;
+        font-family: 'Playfair Display', Georgia, serif;
+    }
+
+    .info-list { display: flex; flex-direction: column; gap: 1rem; }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: var(--brand-light);
+        border-radius: 6px;
+    }
+
+    .info-row span { color: #666; font-size: 0.9rem; }
+    .info-row strong { color: var(--brand); font-weight: 600; }
+
+    .btn-favorite, .btn-primary-action, .btn-secondary-action {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--brand);
+        background: white;
+        color: var(--brand);
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+        font-size: 0.95rem;
+        margin-bottom: 0.75rem;
+        font-family: inherit;
+    }
+
+    .btn-favorite:hover, .btn-secondary-action:hover { background: var(--brand-light); }
+
+    .btn-favorite.saved {
+        background: #C8873A;
+        border-color: #C8873A;
+        color: white;
+    }
+
+    .btn-primary-action {
+        background: var(--brand);
+        color: white;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+
+    .btn-primary-action:hover { background: var(--brand-hover); border-color: var(--brand-hover); }
+
+    .highlights-list { list-style: none; padding: 0; margin: 0; }
+    .highlights-list li { padding: 0.5rem 0; color: #666; border-bottom: 0.5px solid #EEE8DF; }
+    .highlights-list li:last-child { border-bottom: none; }
+
+    .no-content { text-align: center; color: #999; padding: 2rem; }
+
+    /* ── Responsive ── */
+    @@media (max-width: 968px) {
+        .details-wrapper {
+            grid-template-columns: 1fr;
+            padding: 1rem;
+        }
+
+        .sidebar { position: static; }
+
+        .hero-overlay { padding: 2rem 1rem 1rem; }
+        .hero-overlay h1 { font-size: 2rem; }
+    }
+
+    @@media (max-width: 600px) {
+        .details-grid, .activities-grid, .gallery-grid { grid-template-columns: 1fr; }
+        .details-wrapper { gap: 1rem; }
+        .hero-section { height: 300px; }
+        .info-section, .gallery-section, .map-section,
+        .activities-section, .reviews-section { padding: 1rem; }
+    }
+</style>
+
+<div class="destination-details-page">
+    @if (isLoading)
+    {
+        <div class="loading-spinner" role="status" aria-label="Loading destination">
+            <div class="spinner"></div>
+            <p>Loading destination...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="error-banner" role="alert">⚠️ @errorMessage</div>
+    }
+    else if (destination != null)
+    {
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <img src="@destination.ImageUrl"
+                 alt="Scenic view of @destination.Name"
+                 class="hero-image"
+                 onerror="this.src='https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200'" />
+            <div class="hero-overlay">
+                <h1>@destination.Name</h1>
+                <div class="hero-info">
+                    <span class="rating" aria-label="Rating @destination.Rating.ToString("F1") out of 5">
+                        ⭐ @destination.Rating.ToString("F1")/5.0
+                    </span>
+                    <span class="category-badge">@destination.Category</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-wrapper">
+            <!-- Main Content -->
+            <main class="main-content">
+
+                <!-- About Section -->
+                <section class="info-section" aria-labelledby="about-heading">
+                    <h2 id="about-heading">About @destination.Name</h2>
+                    <p class="description">@destination.Description</p>
+
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <strong>📍 Province</strong>
+                            <p>@destination.Province</p>
+                        </div>
+                        <div class="detail-item">
+                            <strong>🏷️ Category</strong>
+                            <p>@destination.Category</p>
+                        </div>
+                        <div class="detail-item">
+                            <strong>📅 Best Season</strong>
+                            <p>@(destination.BestSeason ?? "Year-round")</p>
+                        </div>
+                        <div class="detail-item">
+                            <strong>🌡️ Temperature</strong>
+                            <p>@(destination.Temperature ?? "Varies")</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Gallery Section -->
+                @if (destination.ImageGallery != null && destination.ImageGallery.Any())
+                {
+                    <section class="gallery-section" aria-labelledby="gallery-heading">
+                        <h2 id="gallery-heading">Gallery</h2>
+                        <div class="gallery-grid">
+                            @foreach (var image in destination.ImageGallery.Take(6))
+                            {
+                                <div class="gallery-item">
+                                    <img src="@image"
+                                         alt="@destination.Name gallery photo"
+                                         class="gallery-image"
+                                         @onclick="() => OpenImageModal(image)"
+                                         tabindex="0"
+                                         role="button"
+                                         @onkeydown="e => OnGalleryKeyDown(e, image)" />
+                                </div>
+                            }
+                        </div>
+                    </section>
+                }
+
+                <!-- Map Section -->
+                <section class="map-section" aria-labelledby="map-heading">
+                    <h2 id="map-heading">📍 Location on Map</h2>
+                    <div class="map-container">
+                        <iframe
+                            title="Map showing location of @destination.Name"
+                            src="https://maps.google.com/maps?q=@destination.Latitude,@destination.Longitude&z=13&output=embed"
+                            loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade"
+                            aria-label="Google Map for @destination.Name">
+                        </iframe>
+                    </div>
+                </section>
+
+                <!-- Activities Section -->
+                <section class="activities-section" aria-labelledby="activities-heading">
+                    <h2 id="activities-heading">🎯 Activities in @destination.Name</h2>
+
+                    @if (activities.Any())
+                    {
+                        <div class="activities-grid">
+                            @foreach (var activity in activities)
+                            {
+                                <article class="activity-card">
+                                    <div class="activity-image">
+                                        <img src="@activity.ImageUrl"
+                                             alt="@activity.Name"
+                                             onerror="this.src='https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400'" />
+                                        <span class="activity-badge">@activity.DifficultyLevel</span>
+                                    </div>
+                                    <div class="activity-content">
+                                        <h3>@activity.Name</h3>
+                                        <p class="activity-desc">@activity.Description</p>
+                                        <div class="activity-meta">
+                                            <span class="duration">⏱️ @activity.Duration mins</span>
+                                            <span class="price">SR @activity.Price.ToString("N0")</span>
+                                        </div>
+                                        <button @onclick="() => GoToActivity(activity.Id)"
+                                                class="btn-view-activity"
+                                                aria-label="View details for @activity.Name">
+                                            View Details →
+                                        </button>
+                                    </div>
+                                </article>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="no-content">No activities available for this destination yet.</p>
+                    }
+                </section>
+
+                <!-- Reviews Section -->
+                <section class="reviews-section" aria-labelledby="reviews-heading">
+                    <h2 id="reviews-heading">⭐ Reviews (@reviews.Count)</h2>
+
+                    @if (reviews.Any())
+                    {
+                        <div class="reviews-list">
+                            @foreach (var review in visibleReviews)
+                            {
+                                <article class="review-card">
+                                    <div class="review-header">
+                                        <div class="reviewer-info">
+                                            <strong>@review.UserName</strong>
+                                            <small>@review.CreatedDate.ToString("MMM dd, yyyy")</small>
+                                        </div>
+                                        <div class="star-rating" aria-label="@review.Rating out of 5 stars">
+                                            @(new string('★', review.Rating))@(new string('☆', 5 - review.Rating))
+                                        </div>
+                                    </div>
+                                    <p class="review-text">@review.Text</p>
+                                </article>
+                            }
+                        </div>
+
+                        @if (reviews.Count > 5 && !showAllReviews)
+                        {
+                            <button class="btn-see-more"
+                                    @onclick="() => showAllReviews = true"
+                                    aria-label="Show all @reviews.Count reviews">
+                                See all @reviews.Count reviews
+                            </button>
+                        }
+                    }
+                    else
+                    {
+                        <p class="no-content">No reviews yet. Be the first to review!</p>
+                    }
+
+                    @if (isAuthenticated)
+                    {
+                        <button @onclick="NavigateToWriteReview" class="btn-write-review">
+                            ✍️ Write a Review
+                        </button>
+                    }
+                    else
+                    {
+                        <p class="auth-prompt">
+                            <a href="/Account/Login?returnUrl=@Uri.EscapeDataString(Nav.Uri)">Login</a> to write a review
+                        </p>
+                    }
+                </section>
+
+            </main>
+
+            <!-- Sidebar -->
+            <aside class="sidebar" aria-label="Destination quick info">
+
+                <div class="quick-card">
+                    <h3>Quick Info</h3>
+                    <div class="info-list">
+                        <div class="info-row">
+                            <span>Rating</span>
+                            <strong>@destination.Rating.ToString("F1")/5</strong>
+                        </div>
+                        <div class="info-row">
+                            <span>Province</span>
+                            <strong>@destination.Province</strong>
+                        </div>
+                        <div class="info-row">
+                            <span>Activities</span>
+                            <strong>@activities.Count</strong>
+                        </div>
+                        <div class="info-row">
+                            <span>Reviews</span>
+                            <strong>@reviews.Count</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-card">
+                    <h3>Plan Your Visit</h3>
+
+                    <button @onclick="ToggleFavorite"
+                            class="btn-favorite @(isFavorited ? "saved" : "")"
+                            aria-pressed="@isFavorited.ToString().ToLower()">
+                        @(isFavorited ? "❤️ Saved" : "❤️ Save to Favorites")
+                    </button>
+
+                    @if (isAuthenticated)
+                    {
+                        <button @onclick='() => Nav.NavigateTo($"/planner?destination={Id}")'
+                                class="btn-primary-action">
+                            🗺️ Plan a Trip
+                        </button>
+                    }
+                    else
+                    {
+                        <a href="/Account/Login?returnUrl=@Uri.EscapeDataString(Nav.Uri)"
+                           class="btn-primary-action">
+                            🗺️ Plan a Trip
+                        </a>
+                    }
+
+                    <button @onclick="ShareDestination" class="btn-secondary-action">
+                        🔗 Share
+                    </button>
+                </div>
+
+                @if (highlights.Any())
+                {
+                    <div class="highlights-card">
+                        <h3>Highlights</h3>
+                        <ul class="highlights-list">
+                            @foreach (var h in highlights)
+                            {
+                                <li>@h</li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </aside>
+        </div>
+    }
+</div>
+
+<!-- Image Modal -->
+@if (!string.IsNullOrEmpty(activeModalImage))
+{
+    <div class="modal-backdrop"
+         role="dialog"
+         aria-modal="true"
+         aria-label="Image viewer"
+         @onclick="CloseImageModal">
+        <button class="modal-close" aria-label="Close image" @onclick:stopPropagation="true" @onclick="CloseImageModal">✕</button>
+        <img src="@activeModalImage"
+             alt="Enlarged gallery photo"
+             class="modal-img"
+             @onclick:stopPropagation="true" />
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    private Destination?    destination;
+    private List<Activity>  activities        = new();
+    private List<Review>    reviews           = new();
+    private List<string>    highlights        = new();
+    private bool            isAuthenticated   = false;
+    private bool            isFavorited       = false;
+    private bool            isLoading         = true;
+    private bool            showAllReviews    = false;
+    private string          userId            = "";
+    private string?         errorMessage;
+    private string?         activeModalImage;
+
+    // Computed: show first 5 or all based on showAllReviews flag
+    private IEnumerable<Review> visibleReviews => showAllReviews ? reviews : reviews.Take(5);
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Use AuthenticationStateProvider — consistent with project's Identity auth setup
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+
+            if (isAuthenticated)
+            {
+                userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+            }
+
+            // Load destination first — redirect if not found
+            destination = await DestinationService.GetByIdAsync(Id);
+            if (destination == null)
+            {
+                Nav.NavigateTo("/destinations");
+                return;
+            }
+
+            // Parse highlights from JSON stored in DB
+            if (!string.IsNullOrWhiteSpace(destination.HighlightsJson))
+            {
+                try
+                {
+                    highlights = JsonSerializer.Deserialize<List<string>>(destination.HighlightsJson)
+                                 ?? new List<string>();
+                }
+                catch
+                {
+                    highlights = new List<string>();
+                }
+            }
+
+            // Sequential awaits — EF Core DbContext is not thread-safe,
+            // Task.WhenAll on the same context causes InvalidOperationException
+            activities = await ActivityService.GetByDestinationIdAsync(Id);
+            reviews    = await ReviewService.GetByDestinationIdAsync(Id);
+
+            // Check favorite status for authenticated users only
+            if (isAuthenticated && !string.IsNullOrEmpty(userId))
+            {
+                isFavorited = await UserFavoriteService.IsFavoriteAsync(userId, Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading destination {Id}: {ex}");
+            errorMessage = "Could not load this destination. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    // ── Actions ───────────────────────────────────────────────────────────────
+    private async Task ToggleFavorite()
+    {
+        if (!isAuthenticated)
+        {
+            Nav.NavigateTo($"/Account/Login?returnUrl={Uri.EscapeDataString(Nav.Uri)}");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(userId)) return;
+
+        try
+        {
+            if (isFavorited)
+            {
+                await UserFavoriteService.RemoveFavoriteAsync(userId, Id);
+                isFavorited = false;
+            }
+            else
+            {
+                await UserFavoriteService.AddFavoriteAsync(userId, Id);
+                isFavorited = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Favorite error: {ex.Message}");
+            errorMessage = "Could not update favorites. Please try again.";
+        }
+    }
+
+    private void NavigateToWriteReview()
+    {
+        // Navigates to the Review page with destination pre-selected
+        // Ensure a WriteReview.razor page exists at /review/write
+        Nav.NavigateTo($"/review/write?destinationId={Id}");
+    }
+
+    private void GoToActivity(int activityId) =>
+        Nav.NavigateTo($"/activity/{activityId}");
+
+    private async Task ShareDestination()
+    {
+        // Use the Web Share API via JS interop if available; fallback to clipboard
+        var shareUrl = $"{Nav.BaseUri}destination/{Id}";
+        try
+        {
+            // Clipboard copy — a common, widely-supported fallback
+            // Requires IJSRuntime injection for full clipboard support
+            // For now, navigate to a shareable URL builder page or use JS
+            await Task.CompletedTask; // placeholder until JSRuntime is injected
+            Console.WriteLine($"Sharing: {shareUrl}");
+            // TODO: inject IJSRuntime and call navigator.clipboard.writeText(shareUrl)
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Share error: {ex.Message}");
+        }
+    }
+
+    private void OpenImageModal(string imageUrl) =>
+        activeModalImage = imageUrl;
+
+    private void CloseImageModal() =>
+        activeModalImage = null;
+
+    private void OnGalleryKeyDown(KeyboardEventArgs e, string imageUrl)
+    {
+        if (e.Key == "Enter")
+            OpenImageModal(imageUrl);
+    }
+}
