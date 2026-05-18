@@ -9,14 +9,47 @@
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Confirm email change</PageTitle>
+<PageTitle>Email Change Confirmed – Dunes Of Arabia</PageTitle>
 
-<h1>Confirm email change</h1>
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    .auth-page { min-height:100vh; background:radial-gradient(ellipse at 60% 40%,#E8D9C5 0%,#DFD0B8 50%,#D4C4A8 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; font-family:'Inter','Segoe UI',sans-serif; }
+    .auth-brand { text-align:center; margin-bottom:2rem; }
+    .auth-brand h1 { font-family:'Playfair Display',Georgia,serif; font-size:2.6rem; font-weight:700; color:#7B2D10; letter-spacing:3px; text-transform:uppercase; margin-bottom:.4rem; }
+    .auth-brand p { font-size:1rem; color:#8B6650; }
+    .auth-card { background:#FFF; border-radius:16px; padding:3rem; width:100%; max-width:480px; box-shadow:0 4px 40px rgba(100,50,20,.10); text-align:center; }
+    .card-icon { font-size:4rem; margin-bottom:1.25rem; }
+    .card-title { font-family:'Playfair Display',Georgia,serif; font-size:1.85rem; font-weight:600; color:#1C0F07; margin-bottom:1rem; }
+    .card-body { font-size:.95rem; color:#5A3E30; line-height:1.7; margin-bottom:2rem; }
+    .alert-error { background:#FEF2F2; color:#991B1B; border:1px solid #FCA5A5; border-radius:8px; padding:.85rem 1rem; margin-bottom:1.5rem; font-size:.875rem; }
+    .btn-primary { display:inline-block; padding:14px 36px; background:#7B2D10; color:#FFF; border:none; border-radius:8px; font-size:.95rem; font-weight:600; font-family:inherit; cursor:pointer; text-decoration:none; transition:background .25s,transform .2s; }
+    .btn-primary:hover { background:#5C2009; transform:translateY(-1px); }
+</style>
 
-<StatusMessage Message="@message" />
+<div class="auth-page">
+    <div class="auth-brand"><h1>Saudi Heritage</h1><p>Dunes of Arabia · Travel Platform</p></div>
+    <div class="auth-card">
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="card-icon">❌</div>
+            <h2 class="card-title">Change Failed</h2>
+            <div class="alert-error">⚠️ @errorMessage</div>
+            <a href="/Account/Login" class="btn-primary">Back to Sign In</a>
+        }
+        else
+        {
+            <div class="card-icon">✅</div>
+            <h2 class="card-title">Email Updated!</h2>
+            <p class="card-body">Your email address has been changed successfully. Please sign in again with your new email.</p>
+            <a href="/Account/Login" class="btn-primary">Sign In</a>
+        }
+    </div>
+</div>
 
 @code {
-    private string? message;
+    private string? errorMessage;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -34,17 +67,14 @@
     {
         if (UserId is null || Email is null || Code is null)
         {
-            RedirectManager.RedirectToWithStatus(
-                "Account/Login", "Error: Invalid email change confirmation link.", HttpContext);
+            errorMessage = "Invalid email change confirmation link.";
             return;
         }
 
         var user = await UserManager.FindByIdAsync(UserId);
         if (user is null)
         {
-            // FIX #13: Was "Unable to find user with Id '{userId}'" — the {userId}
-            // was a literal string, not interpolated. Now uses $"..." with UserId.
-            message = $"Unable to find user with Id '{UserId}'";
+            errorMessage = $"Unable to find user with ID '{UserId}'.";
             return;
         }
 
@@ -52,19 +82,17 @@
         var result = await UserManager.ChangeEmailAsync(user, Email, code);
         if (!result.Succeeded)
         {
-            message = "Error changing email.";
+            errorMessage = "Error changing email. The link may have expired.";
             return;
         }
 
-        // Email and username are the same in this app, so update both together
         var setUserNameResult = await UserManager.SetUserNameAsync(user, Email);
         if (!setUserNameResult.Succeeded)
         {
-            message = "Error changing user name.";
+            errorMessage = "Error updating username.";
             return;
         }
 
         await SignInManager.RefreshSignInAsync(user);
-        message = "Thank you for confirming your email change.";
     }
 }

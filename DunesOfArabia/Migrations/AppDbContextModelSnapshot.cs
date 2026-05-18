@@ -30,6 +30,14 @@ namespace DunesOfArabia.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.PrimitiveCollection<string>("AvailableTimes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CancellationPolicy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Category")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -41,21 +49,308 @@ namespace DunesOfArabia.Migrations
                     b.Property<int>("DestinationId")
                         .HasColumnType("int");
 
+                    b.Property<string>("DifficultyLevel")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("DurationHours")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.PrimitiveCollection<string>("IncludedServices")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("MaxParticipants")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinAge")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OperatorEmail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OperatorName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OperatorPhone")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("PriceSAR")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<double>("Rating")
+                        .HasColumnType("float");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DestinationId");
 
                     b.ToTable("Activities");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            AvailableTimes = "[]",
+                            CancellationPolicy = "",
+                            Category = "Adventure",
+                            Description = "Experience the best of AlUla with a combination of archaeological tours, desert adventures, and cultural immersion.",
+                            DestinationId = 3,
+                            DifficultyLevel = "",
+                            DurationHours = 8m,
+                            ImageUrl = "https://images.unsplash.com/photo-1616236197457-53e96373d0b0?w=900",
+                            IncludedServices = "[]",
+                            MaxParticipants = 0,
+                            MinAge = 0,
+                            Name = "AlUla Heritage & Adventure Combo",
+                            OperatorEmail = "",
+                            OperatorName = "",
+                            OperatorPhone = "",
+                            PriceSAR = 350m,
+                            Rating = 0.0
+                        },
+                        new
+                        {
+                            Id = 2,
+                            AvailableTimes = "[]",
+                            CancellationPolicy = "",
+                            Category = "Adventure",
+                            Description = "Thrilling off-road desert adventure through vast golden dunes with expert guides and traditional refreshments.",
+                            DestinationId = 7,
+                            DifficultyLevel = "",
+                            DurationHours = 5m,
+                            ImageUrl = "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=700",
+                            IncludedServices = "[]",
+                            MaxParticipants = 0,
+                            MinAge = 0,
+                            Name = "Desert Safari",
+                            OperatorEmail = "",
+                            OperatorName = "",
+                            OperatorPhone = "",
+                            PriceSAR = 150m,
+                            Rating = 0.0
+                        },
+                        new
+                        {
+                            Id = 3,
+                            AvailableTimes = "[]",
+                            CancellationPolicy = "",
+                            Category = "Adventure",
+                            Description = "Scale spectacular sandstone formations and canyon walls with certified climbing instructors.",
+                            DestinationId = 8,
+                            DifficultyLevel = "",
+                            DurationHours = 3m,
+                            ImageUrl = "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=700",
+                            IncludedServices = "[]",
+                            MaxParticipants = 0,
+                            MinAge = 0,
+                            Name = "Rock Climbing",
+                            OperatorEmail = "",
+                            OperatorName = "",
+                            OperatorPhone = "",
+                            PriceSAR = 120m,
+                            Rating = 0.0
+                        },
+                        new
+                        {
+                            Id = 4,
+                            AvailableTimes = "[]",
+                            CancellationPolicy = "",
+                            Category = "Adventure",
+                            Description = "Heart-pumping 4x4 ride across towering dunes in the vast Empty Quarter desert.",
+                            DestinationId = 7,
+                            DifficultyLevel = "",
+                            DurationHours = 2m,
+                            ImageUrl = "https://images.unsplash.com/photo-1542401886-65d6c61db217?w=700",
+                            IncludedServices = "[]",
+                            MaxParticipants = 0,
+                            MinAge = 0,
+                            Name = "Dune Bashing",
+                            OperatorEmail = "",
+                            OperatorName = "",
+                            OperatorPhone = "",
+                            PriceSAR = 100m,
+                            Rating = 0.0
+                        },
+                        new
+                        {
+                            Id = 5,
+                            AvailableTimes = "[]",
+                            CancellationPolicy = "",
+                            Category = "Cultural",
+                            Description = "Guided walk through Diriyah's ancient mud-brick At-Turaif district with a local historian.",
+                            DestinationId = 4,
+                            DifficultyLevel = "",
+                            DurationHours = 3m,
+                            ImageUrl = "https://images.unsplash.com/photo-1539667284076-a4d98d9ac42b?w=700",
+                            IncludedServices = "[]",
+                            MaxParticipants = 0,
+                            MinAge = 0,
+                            Name = "Heritage Walking Tour",
+                            OperatorEmail = "",
+                            OperatorName = "",
+                            OperatorPhone = "",
+                            PriceSAR = 90m,
+                            Rating = 0.0
+                        },
+                        new
+                        {
+                            Id = 6,
+                            AvailableTimes = "[]",
+                            CancellationPolicy = "",
+                            Category = "Cultural",
+                            Description = "Explore labyrinthine souqs, taste local spices, and shop handcrafted Saudi treasures.",
+                            DestinationId = 2,
+                            DifficultyLevel = "",
+                            DurationHours = 2m,
+                            ImageUrl = "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=700",
+                            IncludedServices = "[]",
+                            MaxParticipants = 0,
+                            MinAge = 0,
+                            Name = "Traditional Souq Experience",
+                            OperatorEmail = "",
+                            OperatorName = "",
+                            OperatorPhone = "",
+                            PriceSAR = 70m,
+                            Rating = 0.0
+                        },
+                        new
+                        {
+                            Id = 7,
+                            AvailableTimes = "[]",
+                            CancellationPolicy = "",
+                            Category = "Cultural",
+                            Description = "Walk among Nabataean tombs and ancient inscriptions at AlUla's UNESCO World Heritage sites.",
+                            DestinationId = 3,
+                            DifficultyLevel = "",
+                            DurationHours = 4m,
+                            ImageUrl = "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=700",
+                            IncludedServices = "[]",
+                            MaxParticipants = 0,
+                            MinAge = 0,
+                            Name = "Archaeological Site Visit",
+                            OperatorEmail = "",
+                            OperatorName = "",
+                            OperatorPhone = "",
+                            PriceSAR = 110m,
+                            Rating = 0.0
+                        },
+                        new
+                        {
+                            Id = 8,
+                            AvailableTimes = "[]",
+                            CancellationPolicy = "",
+                            Category = "Water",
+                            Description = "Dive into pristine Red Sea coral reefs teeming with vibrant marine life and stunning underwater formations.",
+                            DestinationId = 12,
+                            DifficultyLevel = "",
+                            DurationHours = 3m,
+                            ImageUrl = "https://images.unsplash.com/photo-1564769611905-cd27ee64e59b?w=700",
+                            IncludedServices = "[]",
+                            MaxParticipants = 0,
+                            MinAge = 0,
+                            Name = "Scuba Diving",
+                            OperatorEmail = "",
+                            OperatorName = "",
+                            OperatorPhone = "",
+                            PriceSAR = 200m,
+                            Rating = 0.0
+                        },
+                        new
+                        {
+                            Id = 9,
+                            AvailableTimes = "[]",
+                            CancellationPolicy = "",
+                            Category = "Water",
+                            Description = "Snorkel through crystal-clear waters above spectacular coral gardens and tropical fish.",
+                            DestinationId = 12,
+                            DifficultyLevel = "",
+                            DurationHours = 3m,
+                            ImageUrl = "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=700",
+                            IncludedServices = "[]",
+                            MaxParticipants = 0,
+                            MinAge = 0,
+                            Name = "Snorkeling Adventure",
+                            OperatorEmail = "",
+                            OperatorName = "",
+                            OperatorPhone = "",
+                            PriceSAR = 90m,
+                            Rating = 0.0
+                        },
+                        new
+                        {
+                            Id = 10,
+                            AvailableTimes = "[]",
+                            CancellationPolicy = "",
+                            Category = "Desert",
+                            Description = "Ride through golden sands atop a camel as the desert sun paints the dunes a brilliant crimson.",
+                            DestinationId = 7,
+                            DifficultyLevel = "",
+                            DurationHours = 2m,
+                            ImageUrl = "https://images.unsplash.com/photo-1549880338-65ddcdfd017b?w=700",
+                            IncludedServices = "[]",
+                            MaxParticipants = 0,
+                            MinAge = 0,
+                            Name = "Camel Trekking",
+                            OperatorEmail = "",
+                            OperatorName = "",
+                            OperatorPhone = "",
+                            PriceSAR = 100m,
+                            Rating = 0.0
+                        },
+                        new
+                        {
+                            Id = 11,
+                            AvailableTimes = "[]",
+                            CancellationPolicy = "",
+                            Category = "Desert",
+                            Description = "Witness a breathtaking canopy of stars far from city lights, deep in the Arabian desert.",
+                            DestinationId = 9,
+                            DifficultyLevel = "",
+                            DurationHours = 2m,
+                            ImageUrl = "https://images.unsplash.com/photo-1446941303997-2843d7b4d20f?w=700",
+                            IncludedServices = "[]",
+                            MaxParticipants = 0,
+                            MinAge = 0,
+                            Name = "Stargazing Experience",
+                            OperatorEmail = "",
+                            OperatorName = "",
+                            OperatorPhone = "",
+                            PriceSAR = 80m,
+                            Rating = 0.0
+                        },
+                        new
+                        {
+                            Id = 12,
+                            AvailableTimes = "[]",
+                            CancellationPolicy = "",
+                            Category = "Desert",
+                            Description = "Spend an evening in a traditional Bedouin camp with dinner, cultural music, and desert tales.",
+                            DestinationId = 9,
+                            DifficultyLevel = "",
+                            DurationHours = 8m,
+                            ImageUrl = "https://images.unsplash.com/photo-1519671282429-b44b0de7773e?w=700",
+                            IncludedServices = "[]",
+                            MaxParticipants = 0,
+                            MinAge = 0,
+                            Name = "Bedouin Camp Experience",
+                            OperatorEmail = "",
+                            OperatorName = "",
+                            OperatorPhone = "",
+                            PriceSAR = 180m,
+                            Rating = 0.0
+                        });
                 });
 
             modelBuilder.Entity("DunesOfArabia.Models.ApplicationUser", b =>
@@ -134,11 +429,59 @@ namespace DunesOfArabia.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ConfirmationNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("DestinationId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("DestinationId1")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("NumberOfTravelers")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PostalCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Province")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
@@ -151,6 +494,12 @@ namespace DunesOfArabia.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Tax")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("decimal(18,2)");
 
@@ -161,6 +510,8 @@ namespace DunesOfArabia.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DestinationId");
+
+                    b.HasIndex("DestinationId1");
 
                     b.ToTable("Bookings");
                 });
@@ -273,6 +624,10 @@ namespace DunesOfArabia.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("BestSeason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Category")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -284,7 +639,20 @@ namespace DunesOfArabia.Migrations
                     b.Property<decimal>("Cost")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
                     b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("HighlightsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageGallery")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -306,9 +674,16 @@ namespace DunesOfArabia.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+<<<<<<< Updated upstream
+=======
                     b.Property<double>("Rating")
                         .HasColumnType("float");
 
+                    b.Property<string>("Temperature")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+>>>>>>> Stashed changes
                     b.Property<string>("VisaInfo")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -321,6 +696,7 @@ namespace DunesOfArabia.Migrations
                         new
                         {
                             Id = 1,
+<<<<<<< Updated upstream
                             Category = "Historical",
                             Climate = "Hot, Dry",
                             Cost = 500m,
@@ -330,13 +706,231 @@ namespace DunesOfArabia.Migrations
                             Longitude = 37.920000000000002,
                             Name = "AlUla",
                             Province = "Medina",
-                            Rating = 0.0,
+=======
+                            BestSeason = "November to February",
+                            Category = "Urban",
+                            Climate = "Hot, Arid",
+                            Cost = 800m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "The modern capital blending innovation with rich cultural heritage and historic landmarks.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1586724237569-f3d0c1dee8c6?w=800",
+                            Latitude = 24.6877,
+                            Longitude = 46.721899999999998,
+                            Name = "Riyadh",
+                            Province = "Central Region",
+                            Rating = 4.7999999999999998,
+                            Temperature = "20°C – 45°C",
+>>>>>>> Stashed changes
                             VisaInfo = "Tourist Visa Available"
                         },
                         new
                         {
                             Id = 2,
+                            BestSeason = "October to April",
+                            Category = "Coastal",
+                            Climate = "Hot, Humid",
+                            Cost = 700m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Historic port city with beautiful coastline, vibrant culture, and world-class diving.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1539667284076-a4d98d9ac42b?w=800",
+                            Latitude = 21.485800000000001,
+                            Longitude = 39.192500000000003,
+                            Name = "Jeddah",
+                            Province = "Red Sea Coast",
+                            Rating = 4.7000000000000002,
+                            Temperature = "22°C – 40°C",
+                            VisaInfo = "Tourist Visa Available"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            BestSeason = "October to March",
+                            Category = "Historical",
+                            Climate = "Hot, Dry",
+                            Cost = 1200m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Ancient rock formations and UNESCO World Heritage sites in a stunning desert landscape.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1616236197457-53e96373d0b0?w=800",
+                            Latitude = 26.609999999999999,
+                            Longitude = 37.920000000000002,
+                            Name = "AlUla",
+                            Province = "Al Madinah Region",
+                            Rating = 4.9000000000000004,
+                            Temperature = "10°C – 38°C",
+                            VisaInfo = "Tourist Visa Available"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            BestSeason = "November to February",
+                            Category = "Historical",
+                            Climate = "Hot, Arid",
+                            Cost = 500m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "The birthplace of the Kingdom with beautifully preserved mud-brick architecture.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800",
+                            Latitude = 24.734400000000001,
+                            Longitude = 46.575400000000002,
+                            Name = "Diriyah",
+                            Province = "Riyadh Province",
+                            Rating = 4.5999999999999996,
+                            Temperature = "18°C – 44°C",
+                            VisaInfo = "Tourist Visa Available"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            BestSeason = "October to March",
+                            Category = "Historical",
+                            Climate = "Hot, Dry",
+                            Cost = 950m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Saudi Arabia's first UNESCO World Heritage Site with breathtaking Nabataean tombs carved into sandstone.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=800",
+                            Latitude = 26.791399999999999,
+                            Longitude = 37.9529,
+                            Name = "Hegra (Mada'in Saleh)",
+                            Province = "Al Madinah Region",
+                            Rating = 4.7999999999999998,
+                            Temperature = "10°C – 38°C",
+                            VisaInfo = "Tourist Visa Available"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            BestSeason = "October to March",
+                            Category = "Historical",
+                            Climate = "Hot, Dry",
+                            Cost = 600m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "A labyrinth of mud-brick houses dating back 2,000 years, abandoned and eerily preserved in the desert.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1526392060635-9d6019884377?w=800",
+                            Latitude = 26.587,
+                            Longitude = 37.916800000000002,
+                            Name = "Al Ula Old Town",
+                            Province = "Al Madinah Region",
+                            Rating = 4.5,
+                            Temperature = "10°C – 38°C",
+                            VisaInfo = "Tourist Visa Available"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            BestSeason = "November to February",
+                            Category = "Desert",
+                            Climate = "Extremely Hot, Arid",
+                            Cost = 1100m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "The world's largest continuous sand desert offering unparalleled adventure experiences.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=800",
+                            Latitude = 20.0,
+                            Longitude = 50.0,
+                            Name = "Empty Quarter",
+                            Province = "Southern Saudi Arabia",
+                            Rating = 4.5,
+                            Temperature = "15°C – 50°C",
+                            VisaInfo = "Tourist Visa Available"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            BestSeason = "October to April",
+                            Category = "Desert",
+                            Climate = "Hot, Dry",
+                            Cost = 900m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Dramatic red-sand valleys and towering sandstone pillars stretching to the horizon.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1519671282429-b44b0de7773e?w=800",
+                            Latitude = 29.575500000000002,
+                            Longitude = 35.423699999999997,
+                            Name = "Wadi Rum",
+                            Province = "Tabuk Region",
+                            Rating = 4.7000000000000002,
+                            Temperature = "10°C – 38°C",
+                            VisaInfo = "Tourist Visa Available"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            BestSeason = "November to March",
+                            Category = "Desert",
+                            Climate = "Hot, Arid",
+                            Cost = 750m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Vast crescent-shaped dunes with striking reddish-orange sands unique to northern Arabia.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1542401886-65d6c61db217?w=800",
+                            Latitude = 28.0,
+                            Longitude = 41.0,
+                            Name = "Al Nafud Desert",
+                            Province = "Northern Region",
+                            Rating = 4.2999999999999998,
+                            Temperature = "8°C – 42°C",
+                            VisaInfo = "Tourist Visa Available"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            BestSeason = "April to October",
+                            Category = "Mountain",
+                            Climate = "Mild, Temperate",
+                            Cost = 650m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Lush green mountains with a cooler climate, terraced farms, and breathtaking natural landscapes.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800",
+                            Latitude = 18.2164,
+                            Longitude = 42.505299999999998,
+                            Name = "Asir Mountains",
+                            Province = "Southwestern Saudi Arabia",
+                            Rating = 4.7000000000000002,
+                            Temperature = "12°C – 30°C",
+                            VisaInfo = "Tourist Visa Available"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            BestSeason = "March to October",
+                            Category = "Mountain",
+                            Climate = "Mild",
+                            Cost = 400m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Mountain resort city famous for its rose gardens, cool summer retreats, and pleasant weather year-round.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800",
+                            Latitude = 21.270299999999999,
+                            Longitude = 40.415799999999997,
+                            Name = "Taif",
+                            Province = "Makkah Province",
+                            Rating = 4.4000000000000004,
+                            Temperature = "15°C – 35°C",
+                            VisaInfo = "Tourist Visa Available"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            BestSeason = "October to April",
                             Category = "Nature",
+<<<<<<< Updated upstream
                             Climate = "Hot",
                             Cost = 200m,
                             Description = "Dramatic cliff with panoramic views",
@@ -345,7 +939,141 @@ namespace DunesOfArabia.Migrations
                             Longitude = 45.670000000000002,
                             Name = "Edge of the World",
                             Province = "Riyadh",
-                            Rating = 0.0,
+=======
+                            Climate = "Hot, Humid",
+                            Cost = 850m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Pristine coral reefs, crystal-clear waters, and rare wildlife in a protected Red Sea marine reserve.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800",
+                            Latitude = 16.699999999999999,
+                            Longitude = 41.966700000000003,
+                            Name = "Farasan Islands",
+                            Province = "Jizan Region",
+                            Rating = 4.5999999999999996,
+                            Temperature = "24°C – 38°C",
+                            VisaInfo = "Tourist Visa Available"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            BestSeason = "November to February",
+                            Category = "Nature",
+                            Climate = "Hot, Arid",
+                            Cost = 350m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "The world's largest oasis with sprawling date palm gardens and natural artesian springs.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800",
+                            Latitude = 25.381399999999999,
+                            Longitude = 49.586399999999998,
+                            Name = "Al-Ahsa Oasis",
+                            Province = "Eastern Province",
+                            Rating = 4.2999999999999998,
+                            Temperature = "12°C – 45°C",
+                            VisaInfo = "Tourist Visa Available"
+                        },
+                        new
+                        {
+                            Id = 14,
+                            BestSeason = "October to April",
+                            Category = "Coastal",
+                            Climate = "Hot, Humid",
+                            Cost = 2200m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Pristine islands and turquoise waters home to a new world-class luxury eco-tourism destination.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=800",
+                            Latitude = 28.0,
+                            Longitude = 35.149999999999999,
+                            Name = "Red Sea Project",
+                            Province = "Western Coast",
+                            Rating = 4.7999999999999998,
+                            Temperature = "22°C – 38°C",
+                            VisaInfo = "Tourist Visa Available"
+                        },
+                        new
+                        {
+                            Id = 15,
+                            BestSeason = "October to April",
+                            Category = "Coastal",
+                            Climate = "Hot, Humid",
+                            Cost = 500m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "A laid-back Red Sea city with beautiful coral reefs, clear waters, and a charming historic old town.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800",
+                            Latitude = 24.089300000000001,
+                            Longitude = 38.061799999999998,
+                            Name = "Yanbu",
+                            Province = "Al Madinah Region",
+                            Rating = 4.2000000000000002,
+                            Temperature = "20°C – 40°C",
+                            VisaInfo = "Tourist Visa Available"
+                        },
+                        new
+                        {
+                            Id = 16,
+                            BestSeason = "November to March",
+                            Category = "Coastal",
+                            Climate = "Hot, Humid",
+                            Cost = 300m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Vibrant waterfront promenade with fresh seafood, mangrove walks, and island day trips.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800",
+                            Latitude = 16.889199999999999,
+                            Longitude = 42.551099999999998,
+                            Name = "Jizan Corniche",
+                            Province = "Jizan Region",
+                            Rating = 4.0999999999999996,
+                            Temperature = "22°C – 38°C",
+                            VisaInfo = "Tourist Visa Available"
+                        },
+                        new
+                        {
+                            Id = 17,
+                            BestSeason = "November to March",
+                            Category = "Urban",
+                            Climate = "Hot, Humid",
+                            Cost = 550m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "A modern city on the Arabian Gulf known for its waterfront promenade and cosmopolitan dining.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800",
+                            Latitude = 26.217199999999998,
+                            Longitude = 50.197099999999999,
+                            Name = "Al Khobar",
+                            Province = "Eastern Province",
+                            Rating = 4.2000000000000002,
+                            Temperature = "18°C – 42°C",
+                            VisaInfo = "Tourist Visa Available"
+                        },
+                        new
+                        {
+                            Id = 18,
+                            BestSeason = "October to April",
+                            Category = "Urban",
+                            Climate = "Hot, Arid",
+                            Cost = 1800m,
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "The future city of Saudi Arabia — a futuristic mega-project amidst dramatic desert and coastal scenery.",
+                            HighlightsJson = "[]",
+                            ImageGallery = "[]",
+                            ImageUrl = "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800",
+                            Latitude = 28.033899999999999,
+                            Longitude = 35.513599999999997,
+                            Name = "NEOM & Tabuk Region",
+                            Province = "Tabuk Region",
+                            Rating = 4.5999999999999996,
+                            Temperature = "15°C – 40°C",
+>>>>>>> Stashed changes
                             VisaInfo = "Tourist Visa Available"
                         });
                 });
@@ -358,13 +1086,27 @@ namespace DunesOfArabia.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("DestinationId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
+
+                    b.PrimitiveCollection<string>("Interests")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Travelers")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TripType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -385,15 +1127,15 @@ namespace DunesOfArabia.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("IsCompleted")
+                    b.Property<bool>("IsPacked")
                         .HasColumnType("bit");
-
-                    b.Property<string>("ItemName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ItineraryId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -410,6 +1152,9 @@ namespace DunesOfArabia.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("ActivityId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Comment")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -424,6 +1169,10 @@ namespace DunesOfArabia.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -609,6 +1358,12 @@ namespace DunesOfArabia.Migrations
                         .HasForeignKey("DestinationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("DunesOfArabia.Models.Destination", "Destination")
+                        .WithMany()
+                        .HasForeignKey("DestinationId1");
+
+                    b.Navigation("Destination");
                 });
 
             modelBuilder.Entity("DunesOfArabia.Models.BookingDocument", b =>
@@ -635,11 +1390,13 @@ namespace DunesOfArabia.Migrations
 
             modelBuilder.Entity("DunesOfArabia.Models.PackingItem", b =>
                 {
-                    b.HasOne("DunesOfArabia.Models.Itinerary", null)
+                    b.HasOne("DunesOfArabia.Models.Itinerary", "Itinerary")
                         .WithMany("PackingItems")
                         .HasForeignKey("ItineraryId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.Navigation("Itinerary");
                 });
 
             modelBuilder.Entity("DunesOfArabia.Models.Review", b =>
