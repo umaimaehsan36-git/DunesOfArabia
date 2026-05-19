@@ -1,0 +1,640 @@
+@page "/checkout"
+@layout DunesOfArabia.Components.Layout.MainLayout
+@rendermode InteractiveServer
+
+@inject IBookingService BookingService
+@inject IPaymentService PaymentService
+@inject NavigationManager Nav
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
+<PageTitle>Checkout – Dunes of Arabia</PageTitle>
+
+<div class="checkout-page">
+    <div class="checkout-container">
+        <h1>Complete Your Booking</h1>
+
+        @if(cartItems == null)
+        {
+            <div class="loading-state">
+                <p>Loading checkout...</p>
+            </div>
+        }
+        else if(!cartItems.Any())
+        {
+            <div class="empty-checkout">
+                <p>Your cart is empty</p>
+                <a href="/activities" class="btn-primary">Browse Activities</a>
+            </div>
+        }
+        else
+        {
+            <div class="checkout-grid">
+                <!-- Order Summary -->
+                <div class="checkout-column">
+                    <section class="checkout-section">
+                        <h2>📋 Order Summary</h2>
+                        <div class="order-items">
+                            @foreach(var item in cartItems)
+                            {
+                                <div class="order-item">
+                                    <div class="item-details">
+                                        <h4>@item.ActivityName</h4>
+                                        <p>@(item.Date.ToString("MMM dd, yyyy")) at @item.Time</p>
+                                        <p class="participants">@item.Participants @(item.Participants == 1 ? "person" : "people")</p>
+                                    </div>
+                                    <div class="item-price">
+                                        <strong>SR @((item.Price * item.Participants).ToString("N2"))</strong>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Promo Code -->
+                        <div class="promo-section">
+                            <input type="text" @bind="promoCode" placeholder="Enter promo code" class="promo-input"/>
+                            <button @onclick="ApplyPromoCode" class="btn-apply">Apply</button>
+                        </div>
+
+                        <!-- Price Breakdown -->
+                        <div class="price-breakdown">
+                            <div class="price-row">
+                                <span>Subtotal:</span>
+                                <span>SR @(subtotal.ToString("N2"))</span>
+                            </div>
+                            <div class="price-row">
+                                <span>Tax (15%):</span>
+                                <span>SR @(tax.ToString("N2"))</span>
+                            </div>
+                            @if(discountAmount > 0)
+                            {
+                                <div class="price-row discount">
+                                    <span>Discount:</span>
+                                    <span>-SR @(discountAmount.ToString("N2"))</span>
+                                </div>
+                            }
+                            <div class="price-row total">
+                                <span>Total:</span>
+                                <strong>SR @(totalPrice.ToString("N2"))</strong>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Checkout Form -->
+                <div class="checkout-column">
+                    <form @onsubmit="HandleCheckout">
+                        <!-- Traveler Information -->
+                        <section class="checkout-section">
+                            <h2>👤 Your Information</h2>
+                            
+                            <div class="form-group">
+                                <label>First Name</label>
+                                <input type="text" @bind="firstName" placeholder="Your first name" class="form-input" required/>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Last Name</label>
+                                <input type="text" @bind="lastName" placeholder="Your last name" class="form-input" required/>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" @bind="email" placeholder="your@email.com" class="form-input" required/>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Phone Number</label>
+                                <input type="tel" @bind="phone" placeholder="+966 5XX XXX XXXX" class="form-input" required/>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Special Requirements</label>
+                                <textarea @bind="specialRequirements" placeholder="Any dietary restrictions, accessibility needs, etc." class="form-textarea"></textarea>
+                            </div>
+                        </section>
+
+                        <!-- Billing Address -->
+                        <section class="checkout-section">
+                            <h2>🏠 Billing Address</h2>
+
+                            <div class="form-group">
+                                <label>Street Address</label>
+                                <input type="text" @bind="address" placeholder="Street address" class="form-input" required/>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>City</label>
+                                    <input type="text" @bind="city" placeholder="City" class="form-input" required/>
+                                </div>
+                                <div class="form-group">
+                                    <label>Province</label>
+                                    <input type="text" @bind="province" placeholder="Province" class="form-input" required/>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Postal Code</label>
+                                    <input type="text" @bind="postalCode" placeholder="Postal code" class="form-input" required/>
+                                </div>
+                                <div class="form-group">
+                                    <label>Country</label>
+                                    <input type="text" value="@country" class="form-input" disabled />
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Payment Method -->
+                        <section class="checkout-section">
+                            <h2>💳 Payment Method</h2>
+                            
+                            <div class="payment-options">
+                                <label class="payment-option">
+                                    <input type="radio" name="payment" value="card"
+                                           @onchange='e => paymentMethod = "card"' checked />
+                                    <span>Credit/Debit Card</span>
+                                </label>
+                                <label class="payment-option">
+                                    <input type="radio" name="payment" value="apple-pay"
+                                           @onchange='e => paymentMethod = "apple-pay"' />
+                                    <span>Apple Pay</span>
+                                </label>
+                            </div>
+
+                            @if(paymentMethod == "card")
+                            {
+                                <div class="card-fields">
+                                    <div class="form-group">
+                                        <label>Card Number</label>
+                                        <input type="text" @bind="cardNumber" placeholder="1234 5678 9012 3456" class="form-input" required/>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Expiry</label>
+                                            <input type="text" @bind="cardExpiry" placeholder="MM/YY" class="form-input" required/>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>CVV</label>
+                                            <input type="text" @bind="cardCVV" placeholder="123" class="form-input" required/>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </section>
+
+                        <!-- Terms & Conditions -->
+                        <section class="checkout-section">
+                            <label class="checkbox">
+                                <input type="checkbox" @bind="agreedToTerms" required/>
+                                <span>I agree to the <a href="/terms">Terms & Conditions</a> and <a href="/privacy">Privacy Policy</a></span>
+                            </label>
+                        </section>
+
+                        <!-- Action Buttons -->
+                        <div class="checkout-actions">
+                            <button type="button" @onclick='() => Nav.NavigateTo("/planner")' class="btn-secondary">
+                                ← Back to Planner
+                            </button>
+                            <button type="submit" class="btn-primary" disabled="@(isProcessing || !agreedToTerms)">
+                                @if(isProcessing)
+                                {
+                                    <span>Processing...</span>
+                                }
+                                else
+                                {
+                                    <span>Complete Booking • SR @(totalPrice.ToString("N2"))</span>
+                                }
+                            </button>
+                        </div>
+
+                        @if(!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="error-message">
+                                ⚠️ @errorMessage
+                            </div>
+                        }
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<CartItem> cartItems = new();
+    private string promoCode = "";
+    private decimal subtotal = 0;
+    private decimal tax = 0;
+    private decimal totalPrice = 0;
+    private decimal discountAmount = 0;
+
+    // Traveler Info
+    private string firstName = "";
+    private string lastName = "";
+    private string email = "";
+    private string phone = "";
+    private string specialRequirements = "";
+
+    // Billing Address
+    private string address = "";
+    private string city = "";
+    private string province = "";
+    private string postalCode = "";
+    private string country = "Saudi Arabia";
+
+    // Payment
+    private string paymentMethod = "card";
+    private string cardNumber = "";
+    private string cardExpiry = "";
+    private string cardCVV = "";
+    private bool agreedToTerms = false;
+    private bool isProcessing = false;
+    private string errorMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Check authentication
+            var token = await LocalStorage.GetItemAsync<string>("authToken");
+            if(string.IsNullOrEmpty(token))
+            {
+                Nav.NavigateTo("/login?returnUrl=/checkout");
+                return;
+            }
+
+            // Load cart items from session (implementation depends on your state management)
+            // For now, using dummy data
+            await LoadCartItems();
+            CalculatePrices();
+        }
+        catch(Exception ex)
+        {
+            errorMessage = $"Error loading checkout: {ex.Message}";
+        }
+    }
+
+    private async Task LoadCartItems()
+    {
+        // Load from cart service or session storage
+        // This is a placeholder - implement based on your state management
+        cartItems = new List<CartItem>
+        {
+            // Example items will be loaded from service
+        };
+    }
+
+    private void CalculatePrices()
+    {
+        subtotal = cartItems.Sum(x => x.Price * x.Participants);
+        tax = subtotal * 0.15m;
+        totalPrice = subtotal + tax - discountAmount;
+    }
+
+    private void ApplyPromoCode()
+    {
+        // Validate and apply promo code
+        Console.WriteLine($"Applying promo code: {promoCode}");
+        // Call promo service
+        discountAmount = 50; // Example
+        CalculatePrices();
+    }
+
+    private async Task HandleCheckout()
+    {
+        errorMessage = "";
+
+        // Validate form
+        if(string.IsNullOrEmpty(firstName) || string.IsNullOrEmpty(email))
+        {
+            errorMessage = "Please fill in all required fields";
+            return;
+        }
+
+        isProcessing = true;
+
+        try
+        {
+            // Process payment (integrate with Stripe/Tabby)
+            var paymentResult = new { Success = true, TransactionId = "TXN_" + Guid.NewGuid().ToString().Substring(0, 8) };
+
+            if(paymentResult.Success)
+            {
+                // Create booking
+                var bookingId = 1; // This would come from the API response
+                Nav.NavigateTo($"/booking-confirmation/{bookingId}");
+            }
+            else
+            {
+                errorMessage = "Payment failed. Please try again.";
+            }
+        }
+        catch(Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private class CartItem
+    {
+        public string ActivityName { get; set; } = string.Empty;
+        public DateTime Date { get; set; }
+        public string Time { get; set; } = string.Empty;
+        public int Participants { get; set; }
+        public decimal Price { get; set; }
+    }
+}
+
+<style>
+    .checkout-page {
+        background: #F5EFE8;
+        min-height: 100vh;
+        padding: 2rem 1rem;
+    }
+
+    .checkout-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .checkout-container h1 {
+        color: #8B4513;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .loading-state, .empty-checkout {
+        background: white;
+        padding: 3rem 2rem;
+        border-radius: 12px;
+        text-align: center;
+        color: #666;
+    }
+
+    .checkout-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
+
+    .checkout-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .checkout-section {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .checkout-section h2 {
+        color: #8B4513;
+        margin-top: 0;
+        border-bottom: 2px solid #8B4513;
+        padding-bottom: 0.5rem;
+    }
+
+    .order-items {
+        margin-bottom: 1.5rem;
+    }
+
+    .order-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: #F5EFE8;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .item-details h4 {
+        margin: 0;
+        color: #333;
+    }
+
+    .item-details p {
+        margin: 0.25rem 0;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .participants {
+        font-weight: 600;
+        color: #8B4513;
+    }
+
+    .item-price {
+        text-align: right;
+    }
+
+    .promo-section {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .promo-input {
+        flex: 1;
+        padding: 0.75rem;
+        border: 1px solid #DDD;
+        border-radius: 6px;
+    }
+
+    .btn-apply {
+        padding: 0.75rem 1.5rem;
+        background: #8B4513;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .price-breakdown {
+        border: 2px solid #8B4513;
+        border-radius: 8px;
+        padding: 1rem;
+        background: #FFF8DC;
+    }
+
+    .price-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        color: #666;
+    }
+
+    .price-row.discount {
+        color: #28a745;
+    }
+
+    .price-row.total {
+        border-top: 2px solid #8B4513;
+        padding-top: 1rem;
+        margin-top: 1rem;
+        font-size: 1.1rem;
+        color: #8B4513;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .form-input, .form-textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #DDD;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 1rem;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+        outline: none;
+        border-color: #8B4513;
+        box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.1);
+    }
+
+    .form-textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .payment-options {
+        display: grid;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .payment-option {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border: 2px solid #DDD;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .payment-option:hover {
+        border-color: #8B4513;
+        background: #F5EFE8;
+    }
+
+    .payment-option input {
+        margin-right: 1rem;
+    }
+
+    .card-fields {
+        background: #F5EFE8;
+        padding: 1rem;
+        border-radius: 6px;
+    }
+
+    .checkbox {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        cursor: pointer;
+    }
+
+    .checkbox input {
+        margin-top: 0.25rem;
+    }
+
+    .checkbox a {
+        color: #8B4513;
+        text-decoration: none;
+    }
+
+    .checkbox a:hover {
+        text-decoration: underline;
+    }
+
+    .checkout-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .btn-primary, .btn-secondary {
+        flex: 1;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+        font-size: 1rem;
+    }
+
+    .btn-primary {
+        background: #8B4513;
+        color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background: #A0522D;
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #8B4513;
+        border: 2px solid #8B4513;
+    }
+
+    .btn-secondary:hover {
+        background: #F5EFE8;
+    }
+
+    .error-message {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        color: #856404;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+    }
+
+    @@media (max-width: 968px) {
+        .checkout-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .checkout-actions {
+            flex-direction: column;
+        }
+    }
+</style>
