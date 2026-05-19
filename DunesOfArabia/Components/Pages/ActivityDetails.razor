@@ -1,0 +1,761 @@
+@page "/activity/{id:int}"
+@layout DunesOfArabia.Components.Layout.MainLayout
+@rendermode InteractiveServer
+
+@inject IActivityService ActivityService
+@inject IReviewService ReviewService
+@inject NavigationManager Nav
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
+<PageTitle>@activity?.Name – Book Activity | Dunes of Arabia</PageTitle>
+
+<div class="activity-details-page">
+    @if (activity == null)
+    {
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading activity...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Hero Section -->
+        <div class="activity-hero">
+            <img src="@activity.ImageUrl" alt="@activity.Name" class="hero-image"/>
+            <div class="hero-content">
+                <h1>@activity.Name</h1>
+                <div class="hero-meta">
+                    <span class="rating">⭐ @activity.Rating.ToString("F1")/5.0</span>
+                    <span class="difficulty">@activity.DifficultyLevel Level</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="activity-wrapper">
+            <!-- Main Content -->
+            <div class="activity-main">
+                <!-- Description -->
+                <section class="section">
+                    <h2>About This Activity</h2>
+                    <p class="description">@activity.Description</p>
+                </section>
+
+                <!-- Quick Facts -->
+                <section class="section">
+                    <h2>Activity Details</h2>
+                    <div class="facts-grid">
+                        <div class="fact-item">
+                            <span class="fact-icon">⏱️</span>
+                            <div>
+                                <strong>Duration</strong>
+                                <p>@activity.Duration minutes</p>
+                            </div>
+                        </div>
+                        <div class="fact-item">
+                            <span class="fact-icon">📊</span>
+                            <div>
+                                <strong>Difficulty</strong>
+                                <p>@activity.DifficultyLevel</p>
+                            </div>
+                        </div>
+                        <div class="fact-item">
+                            <span class="fact-icon">👥</span>
+                            <div>
+                                <strong>Max Group Size</strong>
+                                <p>@activity.MaxParticipants people</p>
+                            </div>
+                        </div>
+                        <div class="fact-item">
+                            <span class="fact-icon">👶</span>
+                            <div>
+                                <strong>Min Age</strong>
+                                <p>@activity.MinAge+ years</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- What's Included -->
+                @if(activity.IncludedServices != null && activity.IncludedServices.Any())
+                {
+                    <section class="section">
+                        <h2>What's Included</h2>
+                        <div class="services-list">
+                            @foreach(var service in activity.IncludedServices)
+                            {
+                                <div class="service-item">
+                                    <span class="checkmark">✓</span>
+                                    <span>@service</span>
+                                </div>
+                            }
+                        </div>
+                    </section>
+                }
+
+                <!-- Cancellation Policy -->
+                <section class="section">
+                    <h2>Cancellation Policy</h2>
+                    <div class="policy-box">
+                        <p>@(activity.CancellationPolicy ?? "Free cancellation up to 24 hours before the activity. Cancellations within 24 hours are non-refundable.")</p>
+                    </div>
+                </section>
+
+                <!-- Reviews -->
+                <section class="section">
+                    <h2>⭐ Traveler Reviews (@reviews.Count)</h2>
+                    
+                    @if(reviews.Any())
+                    {
+                        <div class="reviews-container">
+                            @foreach(var review in reviews.Take(5))
+                            {
+                                <div class="review-item">
+                                    <div class="review-top">
+                                        <strong>@review.UserName</strong>
+                                        <span class="review-rating">
+                                            @for(int i = 0; i < review.Rating; i++)
+                                            {
+                                                <span class="star">★</span>
+                                            }
+                                        </span>
+                                    </div>
+                                    <p class="review-text">@review.Text</p>
+                                    <small class="review-date">@review.CreatedDate.ToString("MMM dd, yyyy")</small>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="no-reviews">No reviews yet. Be the first to review this activity!</p>
+                    }
+                </section>
+            </div>
+
+            <!-- Sidebar - Booking Widget -->
+            <aside class="booking-sidebar">
+                <div class="booking-widget">
+                    <div class="price-header">
+                        <span class="label">Price per person</span>
+                        <div class="price-tag">SR @activity.Price</div>
+                    </div>
+
+                    <form @onsubmit="HandleBooking">
+                        <div class="form-group">
+                            <label>Number of Participants</label>
+                            <input type="number" @bind="participants" min="1" max="@activity.MaxParticipants" class="form-input"/>
+                            <small>Max: @activity.MaxParticipants people</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Preferred Date</label>
+                            <input type="date" @bind="selectedDate" @bind:format="yyyy-MM-dd" min="@minDate" class="form-input"/>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Preferred Time</label>
+                            <select @bind="selectedTime" class="form-input">
+                                <option value="">Select a time</option>
+                                <option value="09:00 AM">09:00 AM</option>
+                                <option value="02:00 PM">02:00 PM</option>
+                                <option value="04:00 PM">04:00 PM</option>
+                            </select>
+                        </div>
+
+                        <div class="total-section">
+                            <div class="total-row">
+                                <span>Subtotal:</span>
+                                <span>SR @((activity.Price * participants).ToString("N2"))</span>
+                            </div>
+                            <div class="total-row">
+                                <span>Tax (15%):</span>
+                                <span>SR @((activity.Price * participants * 0.15m).ToString("N2"))</span>
+                            </div>
+                            <div class="total-final">
+                                <span>Total:</span>
+                                <strong>SR @((activity.Price * participants * 1.15m).ToString("N2"))</strong>
+                            </div>
+                        </div>
+
+                        @if(isAuthenticated)
+                        {
+                            <button type="submit" class="btn-book-now">
+                                🎫 Book Now
+                            </button>
+                        }
+                        else
+                        {
+                            <a href="/login?returnUrl=@Uri.EscapeDataString(Nav.Uri)" class="btn-book-now">
+                                🎫 Login to Book
+                            </a>
+                        }
+
+                        <button type="button" @onclick="ShareActivity" class="btn-share">
+                            🔗 Share Activity
+                        </button>
+                    </form>
+
+                    @if(!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="error-message">
+                            ⚠️ @errorMessage
+                        </div>
+                    }
+                </div>
+
+                <!-- Operator Info -->
+                <div class="operator-card">
+                    <h3>Activity Operator</h3>
+                    <div class="operator-info">
+                        <p><strong>@activity.OperatorName</strong></p>
+                        <p>📧 @activity.OperatorEmail</p>
+                        <p>📞 @activity.OperatorPhone</p>
+                        <button @onclick="ContactOperator" class="btn-contact">
+                            📞 Contact Operator
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Requirements -->
+                <div class="requirements-card">
+                    <h3>Requirements</h3>
+                    <ul class="requirements-list">
+                        <li>Minimum age: @activity.MinAge years</li>
+                        <li>Maximum @activity.MaxParticipants per group</li>
+                        <li>Comfortable walking shoes required</li>
+                        <li>Bring plenty of water</li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+    }
+</div>
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Activity activity;
+    private List<Review> reviews = new();
+    private bool isAuthenticated = false;
+    private string minDate = DateTime.Now.ToString("yyyy-MM-dd");
+
+    private int participants = 1;
+
+    // FIX: DateTime? is correct, but MUST be validated properly
+    private DateTime? selectedDate = DateTime.Now.AddDays(1);
+
+    private string selectedTime = "";
+    private string errorMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var token = await LocalStorage.GetItemAsync<string>("authToken");
+            isAuthenticated = !string.IsNullOrEmpty(token);
+
+            activity = await ActivityService.GetByIdAsync(Id);
+            if (activity == null)
+            {
+                Nav.NavigateTo("/activities");
+                return;
+            }
+
+            reviews = (await ReviewService.GetByActivityIdAsync(Id)).ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to load activity details. Please try again.";
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
+    private async Task HandleBooking()
+    {
+        errorMessage = "";
+
+        if (participants < 1)
+        {
+            errorMessage = "Please select at least 1 participant";
+            return;
+        }
+
+        // ✅ FIXED: DateTime? validation (NOT string check)
+        if (!selectedDate.HasValue)
+        {
+            errorMessage = "Please select a date";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(selectedTime))
+        {
+            errorMessage = "Please select a time";
+            return;
+        }
+
+        if (!isAuthenticated)
+        {
+            Nav.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(Nav.Uri)}");
+            return;
+        }
+
+        try
+        {
+            // FIX: convert DateTime to string for URL safely
+            var dateStr = selectedDate.Value.ToString("yyyy-MM-dd");
+
+            var bookingData =
+                $"activity={Id}&date={dateStr}&time={selectedTime}&participants={participants}";
+
+            Nav.NavigateTo($"/checkout?{bookingData}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    private void ShareActivity()
+    {
+        var shareUrl = $"{Nav.BaseUri}activity/{Id}";
+        Console.WriteLine($"Share URL: {shareUrl}");
+    }
+
+    private void ContactOperator()
+    {
+        Console.WriteLine($"Contacting operator: {activity.OperatorName}");
+    }
+}
+
+<style>
+    .activity-details-page {
+        background: #F5EFE8;
+        min-height: 100vh;
+    }
+
+    .loading-spinner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+        color: #8B4513;
+    }
+
+    .spinner {
+        border: 4px solid #DDD;
+        border-top: 4px solid #8B4513;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1rem;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .activity-hero {
+        position: relative;
+        height: 400px;
+        background: #DDD;
+        overflow: hidden;
+    }
+
+    .hero-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .hero-content {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);
+        color: white;
+        padding: 3rem 2rem 2rem;
+    }
+
+    .hero-content h1 {
+        font-size: clamp(2rem, 4vw, 3rem);
+        margin: 0 0 1rem 0;
+        font-weight: 700;
+        font-family: 'Playfair Display', Georgia, serif;
+    }
+
+    .hero-meta {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+    }
+
+    .rating {
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .difficulty {
+        background: rgba(139, 69, 19, 0.9);
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .activity-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 350px;
+        gap: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .section {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .section h2 {
+        color: #8B4513;
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #8B4513;
+        padding-bottom: 0.5rem;
+    }
+
+    .description {
+        color: #555;
+        line-height: 1.8;
+        margin: 0;
+    }
+
+    .facts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .fact-item {
+        background: #F5EFE8;
+        padding: 1.5rem;
+        border-radius: 8px;
+        display: flex;
+        gap: 1rem;
+        border-left: 4px solid #8B4513;
+    }
+
+    .fact-icon {
+        font-size: 1.8rem;
+    }
+
+    .fact-item strong {
+        display: block;
+        color: #8B4513;
+        margin-bottom: 0.5rem;
+    }
+
+    .fact-item p {
+        margin: 0;
+        color: #666;
+    }
+
+    .services-list {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .service-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem;
+        background: #F5EFE8;
+        border-radius: 6px;
+        color: #666;
+    }
+
+    .checkmark {
+        color: #28a745;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+
+    .policy-box {
+        background: #FFF8DC;
+        border-left: 4px solid #FFD700;
+        padding: 1.5rem;
+        border-radius: 6px;
+        color: #555;
+    }
+
+    .policy-box p {
+        margin: 0;
+    }
+
+    .reviews-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .review-item {
+        background: #F5EFE8;
+        padding: 1.5rem;
+        border-radius: 8px;
+        border-left: 4px solid #FFD700;
+    }
+
+    .review-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .review-top strong {
+        color: #333;
+    }
+
+    .review-rating {
+        color: #FFD700;
+        font-size: 0.9rem;
+    }
+
+    .star {
+        display: inline-block;
+        margin-right: 2px;
+    }
+
+    .review-text {
+        color: #666;
+        margin: 0.5rem 0;
+        line-height: 1.6;
+    }
+
+    .review-date {
+        color: #999;
+        font-size: 0.85rem;
+    }
+
+    .no-reviews {
+        text-align: center;
+        color: #999;
+        padding: 2rem;
+    }
+
+    .booking-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+    }
+
+    .booking-widget, .operator-card, .requirements-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .price-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #8B4513;
+    }
+
+    .label {
+        display: block;
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .price-tag {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #8B4513;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #DDD;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-family: inherit;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #8B4513;
+        box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.1);
+    }
+
+    .form-group small {
+        display: block;
+        color: #999;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+    }
+
+    .total-section {
+        background: #F5EFE8;
+        padding: 1rem;
+        border-radius: 6px;
+        margin-bottom: 1.5rem;
+    }
+
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .total-final {
+        display: flex;
+        justify-content: space-between;
+        padding: 1rem 0 0;
+        border-top: 2px solid #8B4513;
+        font-weight: 600;
+        color: #8B4513;
+    }
+
+    .btn-book-now, .btn-share, .btn-contact {
+        width: 100%;
+        padding: 0.75rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    .btn-book-now {
+        background: #8B4513;
+        color: white;
+        text-decoration: none;
+        display: block;
+        text-align: center;
+    }
+
+    .btn-book-now:hover {
+        background: #A0522D;
+    }
+
+    .btn-share, .btn-contact {
+        background: white;
+        color: #8B4513;
+        border: 2px solid #8B4513;
+    }
+
+    .btn-share:hover, .btn-contact:hover {
+        background: #F5EFE8;
+    }
+
+    .error-message {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .operator-card h3, .requirements-card h3 {
+        margin-top: 0;
+        color: #8B4513;
+        border-bottom: 2px solid #8B4513;
+        padding-bottom: 0.5rem;
+    }
+
+    .operator-info p {
+        margin: 0.5rem 0;
+        color: #666;
+        font-size: 0.95rem;
+    }
+
+    .requirements-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .requirements-list li {
+        padding: 0.5rem 0;
+        padding-left: 1.5rem;
+        color: #666;
+        position: relative;
+    }
+
+    .requirements-list li:before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: #28a745;
+        font-weight: 700;
+    }
+
+    @@media (max-width: 968px) {
+        .activity-wrapper {
+            grid-template-columns: 1fr;
+            padding: 1rem;
+        }
+
+        .booking-sidebar {
+            position: static;
+        }
+
+        .activity-hero {
+            height: 300px;
+        }
+    }
+
+    @@media (max-width: 600px) {
+        .facts-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .hero-content {
+            padding: 2rem 1rem 1rem;
+        }
+
+        .hero-content h1 {
+            font-size: 1.8rem;
+        }
+
+        .activity-wrapper {
+            gap: 1rem;
+        }
+
+        .section {
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+    }
+</style>

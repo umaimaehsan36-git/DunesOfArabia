@@ -1,0 +1,911 @@
+@page "/planner"
+@layout DunesOfArabia.Components.Layout.MainLayout
+@rendermode InteractiveServer
+
+@inject IDestinationService DestinationService
+@inject IItineraryService   ItineraryService
+@inject NavigationManager   Nav
+
+<PageTitle>Trip Planner – Saudi Heritage</PageTitle>
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@@400;600;700&family=Lato:wght@@300;400;500;600&display=swap');
+
+    .planner-page {
+        background: #F5EFE8;
+        min-height: 100vh;
+        font-family: 'Lato', sans-serif;
+        padding-bottom: 4rem;
+    }
+
+    /* ── PAGE HEADER ── */
+    .planner-header {
+        text-align: center;
+        padding: 2.8rem 2rem 1.8rem;
+    }
+
+    .planner-header h1 {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: clamp(2.4rem, 4.5vw, 3.2rem);
+        color: #1C1008;
+        font-weight: 700;
+        line-height: 1.15;
+        margin-bottom: 0.5rem;
+    }
+
+    .planner-header p {
+        font-size: 0.93rem;
+        color: #8A7566;
+        font-weight: 300;
+    }
+
+    /* ── STEP PROGRESS BAR ── */
+    .steps-bar {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        max-width: 760px;
+        margin: 0 auto 2rem;
+        padding: 0 2rem;
+        position: relative;
+    }
+
+    .step-item {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        position: relative;
+    }
+
+    .step-label {
+        font-size: 0.80rem;
+        font-weight: 500;
+        color: #B0A090;
+        margin-bottom: 0.45rem;
+        font-family: 'Lato', sans-serif;
+    }
+
+    .step-label.active  { color: #1C1008; font-weight: 600; }
+    .step-label.done    { color: #7B3121; font-weight: 600; }
+
+    .step-track {
+        height: 3px;
+        width: 100%;
+        background: #E0D5CA;
+        border-radius: 2px;
+        overflow: hidden;
+    }
+
+    .step-fill {
+        height: 100%;
+        background: #7B3121;
+        border-radius: 2px;
+        transition: width 0.35s ease;
+    }
+
+    /* ── STEP CARD ── */
+    .step-card {
+        background: white;
+        border-radius: 14px;
+        padding: 2rem 2.2rem 2.2rem;
+        max-width: 760px;
+        margin: 0 auto;
+        box-shadow: 0 2px 14px rgba(90,55,35,0.07);
+    }
+
+    .step-card h2 {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.45rem;
+        color: #1C1008;
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+    }
+
+    .step-card .step-sub {
+        font-size: 0.85rem;
+        color: #9A8878;
+        font-weight: 300;
+        margin-bottom: 1.6rem;
+    }
+
+    /* ── FORM ELEMENTS ── */
+    .form-field {
+        margin-bottom: 1.35rem;
+    }
+
+    .form-field label {
+        display: block;
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: #3A2A1E;
+        margin-bottom: 0.45rem;
+        font-family: 'Lato', sans-serif;
+    }
+
+    .form-select,
+    .form-input {
+        width: 100%;
+        padding: 11px 14px;
+        border: 1.5px solid #DDD3C8;
+        border-radius: 8px;
+        font-size: 0.88rem;
+        font-family: inherit;
+        background: white;
+        color: #2E1A0E;
+        outline: none;
+        appearance: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239A8878' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+
+    .form-select:focus,
+    .form-input:focus {
+        border-color: #7B3121;
+        box-shadow: 0 0 0 3px rgba(123,49,33,0.08);
+    }
+
+    .form-select::placeholder,
+    .form-input::placeholder { color: #B0A090; }
+
+    /* Date row */
+    .date-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.2rem;
+    }
+
+    /* Number input */
+    .number-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        width: fit-content;
+    }
+
+    .num-btn {
+        width: 36px;
+        height: 38px;
+        border: 1.5px solid #DDD3C8;
+        background: white;
+        color: #3A2A1E;
+        font-size: 1.1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s, border-color 0.15s;
+        font-family: inherit;
+    }
+
+    .num-btn:first-child { border-radius: 8px 0 0 8px; }
+    .num-btn:last-child  { border-radius: 0 8px 8px 0; }
+    .num-btn:hover { background: #FAF0E8; border-color: #C4A090; }
+
+    .num-display {
+        min-width: 52px;
+        height: 38px;
+        border-top: 1.5px solid #DDD3C8;
+        border-bottom: 1.5px solid #DDD3C8;
+        border-left: none;
+        border-right: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: #2E1A0E;
+        background: white;
+        font-family: inherit;
+    }
+
+    /* Trip type toggle buttons */
+    .toggle-group {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+    }
+
+    .toggle-btn {
+        padding: 9px 22px;
+        border: 1.5px solid #C4A090;
+        border-radius: 7px;
+        background: white;
+        color: #5A3A2A;
+        font-size: 0.86rem;
+        font-weight: 500;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.18s, border-color 0.18s, color 0.18s;
+    }
+
+    .toggle-btn:hover { border-color: #7B3121; color: #7B3121; }
+    .toggle-btn.active { background: #7B3121; border-color: #7B3121; color: white; }
+
+    /* ── INTERESTS GRID (Step 2) ── */
+    .interests-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.7rem;
+    }
+
+    .interest-btn {
+        padding: 13px 18px;
+        border: 1.5px solid #DDD3C8;
+        border-radius: 8px;
+        background: #FDF9F5;
+        color: #3A2A1E;
+        font-size: 0.88rem;
+        font-weight: 400;
+        font-family: inherit;
+        cursor: pointer;
+        text-align: left;
+        transition: background 0.18s, border-color 0.18s, color 0.18s;
+    }
+
+    .interest-btn:hover { border-color: #C4A090; background: #FAF0E8; }
+    .interest-btn.selected { border-color: #7B3121; background: #FDF9F5; color: #7B3121; font-weight: 600; }
+
+    /* ── ITINERARY BUILDER (Step 3) ── */
+    .day-block {
+        background: #FDFAF7;
+        border: 1.5px solid #EAE0D8;
+        border-radius: 10px;
+        padding: 1.2rem 1.4rem;
+        margin-bottom: 1rem;
+    }
+
+    .day-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+    }
+
+    .day-title {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.05rem;
+        color: #1C1008;
+        font-weight: 700;
+    }
+
+    .btn-add-activity {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 7px 14px;
+        border: 1.5px solid #C4A090;
+        border-radius: 6px;
+        background: white;
+        color: #7B3121;
+        font-size: 0.82rem;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.18s, border-color 0.18s;
+    }
+
+    .btn-add-activity:hover { background: #FAF0E8; border-color: #7B3121; }
+
+    .activity-slot {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        background: #EEE8DF;
+        border-radius: 7px;
+        padding: 10px 14px;
+        margin-bottom: 0.55rem;
+        font-size: 0.85rem;
+        color: #5A4A3A;
+    }
+
+    .slot-time {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #7A6658;
+        min-width: 58px;
+        font-family: 'Lato', sans-serif;
+    }
+
+    .slot-label {
+        color: #5A4A3A;
+        font-size: 0.84rem;
+    }
+
+    /* ── SUMMARY (Step 4) ── */
+    .summary-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid #F0E8DC;
+    }
+
+    .summary-row:last-of-type { border-bottom: none; }
+
+    .summary-icon {
+        width: 36px;
+        height: 36px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #7B3121;
+    }
+
+    .summary-label {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #1C1008;
+        margin-bottom: 0.2rem;
+        font-family: 'Lato', sans-serif;
+    }
+
+    .summary-value {
+        font-size: 0.84rem;
+        color: #7A6658;
+        font-weight: 300;
+    }
+
+    .interest-tag {
+        display: inline-block;
+        padding: 3px 12px;
+        background: #C8873A;
+        color: white;
+        border-radius: 20px;
+        font-size: 0.76rem;
+        font-weight: 600;
+        margin-right: 4px;
+        margin-bottom: 4px;
+        font-family: 'Lato', sans-serif;
+    }
+
+    .cost-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.2rem 0 0.5rem;
+        border-top: 1px solid #EAE0D8;
+        margin-top: 0.5rem;
+    }
+
+    .cost-label {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: #1C1008;
+    }
+
+    .cost-label-sub {
+        font-size: 0.78rem;
+        color: #9A8878;
+        font-weight: 300;
+        margin-top: 2px;
+    }
+
+    .cost-amount {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.3rem;
+        color: #7B3121;
+        font-weight: 700;
+    }
+
+    /* Save / Share buttons */
+    .summary-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin-top: 1.4rem;
+    }
+
+    .btn-save-itinerary {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 13px;
+        background: #7B3121;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .btn-save-itinerary:hover { background: #5C2218; }
+
+    .btn-share {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 13px;
+        background: white;
+        color: #3A2A1E;
+        border: 1.5px solid #C4A090;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.18s, border-color 0.18s;
+    }
+
+    .btn-share:hover { background: #FAF0E8; border-color: #7B3121; }
+
+    /* ── NAV BUTTONS ── */
+    .planner-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        max-width: 760px;
+        margin: 1.6rem auto 0;
+        padding: 0 2rem;
+    }
+
+    .btn-prev {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 11px 22px;
+        border: 1.5px solid #C4A090;
+        border-radius: 7px;
+        background: white;
+        color: #5A3A2A;
+        font-size: 0.88rem;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.18s, border-color 0.18s;
+    }
+
+    .btn-prev:hover { background: #FAF0E8; border-color: #7B3121; }
+    .btn-prev:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-next {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 11px 26px;
+        background: #7B3121;
+        color: white;
+        border: none;
+        border-radius: 7px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.15s;
+    }
+
+    .btn-next:hover { background: #5C2218; transform: translateY(-1px); }
+    .btn-next.complete { background: #8A7566; }
+    .btn-next.complete:hover { background: #6A5A50; }
+
+    @@media (max-width: 768px) {
+        .step-card { margin: 0 1rem; padding: 1.5rem; }
+        .planner-nav { padding: 0 1rem; }
+        .date-row { grid-template-columns: 1fr; }
+        .interests-grid { grid-template-columns: 1fr; }
+        .summary-actions { grid-template-columns: 1fr; }
+        .steps-bar { padding: 0 1rem; }
+    }
+</style>
+
+<div class="planner-page">
+
+    <!-- PAGE HEADER -->
+    <div class="planner-header">
+        <h1>Plan Your Saudi Adventure</h1>
+        <p>Create your perfect itinerary in just a few steps</p>
+    </div>
+
+    <!-- STEP PROGRESS BAR -->
+    <div class="steps-bar">
+        @for (int i = 1; i <= 4; i++)
+        {
+            var stepNum = i;
+            var labelClass = currentStep == stepNum ? "active" : currentStep > stepNum ? "done" : "";
+            var fillPct   = currentStep > stepNum ? "100%" : currentStep == stepNum ? "50%" : "0%";
+            <div class="step-item">
+                <span class="step-label @labelClass">Step @stepNum</span>
+                <div class="step-track">
+                    <div class="step-fill" style="width: @fillPct"></div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- ── STEP 1: TRIP BASICS ── -->
+    @if (currentStep == 1)
+    {
+        <div class="step-card">
+            <h2>Trip Basics</h2>
+
+            <!-- Destination -->
+            <div class="form-field">
+                <label>Destination(s)</label>
+                <select class="form-select" @bind="selectedDestinationId">
+                    <option value="">Select destination</option>
+                    @foreach (var d in allDestinations)
+                    {
+                        <option value="@d.Id">@d.Name</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Dates -->
+            <div class="date-row">
+                <div class="form-field">
+                    <label>Start Date</label>
+                    <input class="form-input" type="date" @bind="startDate" @bind:format="yyyy-MM-dd" />
+                </div>
+                <div class="form-field">
+                    <label>End Date</label>
+                    <input class="form-input" type="date" @bind="endDate" @bind:format="yyyy-MM-dd" />
+                </div>
+            </div>
+
+            <!-- Travelers -->
+            <div class="form-field">
+                <label>Number of Travelers</label>
+                <div class="number-wrap">
+                    <button class="num-btn" @onclick="DecrementTravelers">−</button>
+                    <div class="num-display">@numTravelers</div>
+                    <button class="num-btn" @onclick="IncrementTravelers">+</button>
+                </div>
+            </div>
+
+            <!-- Trip Type -->
+            <div class="form-field">
+                <label>Trip Type</label>
+                <div class="toggle-group">
+                    @foreach (var t in tripTypes)
+                    {
+                        var type = t;
+                        <button class="toggle-btn @(tripType == type ? "active" : "")"
+                                @onclick="() => tripType = type">@type</button>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- ── STEP 2: INTERESTS ── -->
+    @if (currentStep == 2)
+    {
+        <div class="step-card">
+            <h2>Your Interests</h2>
+            <p class="step-sub">Select all that apply to customize your experience</p>
+
+            <div class="interests-grid">
+                @foreach (var interest in availableInterests)
+                {
+                    var item = interest;
+                    <button class="interest-btn @(selectedInterests.Contains(item) ? "selected" : "")"
+                            @onclick="() => ToggleInterest(item)">
+                        @item
+                    </button>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- ── STEP 3: BUILD ITINERARY ── -->
+    @if (currentStep == 3)
+    {
+        <div class="step-card">
+            <h2>Build Your Itinerary</h2>
+            <p class="step-sub">Add activities to each day of your trip</p>
+
+            @foreach (var day in itineraryDays)
+            {
+                <div class="day-block">
+                    <div class="day-header">
+                        <span class="day-title">Day @day.DayNumber</span>
+                        <button class="btn-add-activity" @onclick="() => AddActivitySlot(day.DayNumber)">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Add Activity
+                        </button>
+                    </div>
+
+                    @foreach (var slot in day.Slots)
+                    {
+                        <div class="activity-slot">
+                            <span class="slot-time">@slot.Time</span>
+                            <span class="slot-label">@slot.Label</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    <!-- ── STEP 4: TRIP SUMMARY ── -->
+    @if (currentStep == 4)
+    {
+        <div class="step-card">
+            <h2>Trip Summary</h2>
+            <p class="step-sub">Review your travel plan</p>
+
+            <!-- Destination -->
+            <div class="summary-row">
+                <div class="summary-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="summary-label">Destination</div>
+                    <div class="summary-value">@(GetDestinationName() ?? "Not selected")</div>
+                </div>
+            </div>
+
+            <!-- Travel Dates -->
+            <div class="summary-row">
+                <div class="summary-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8"  y1="2" x2="8"  y2="6"/>
+                        <line x1="3"  y1="10" x2="21" y2="10"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="summary-label">Travel Dates</div>
+                    <div class="summary-value">
+                        @if (startDate.HasValue && endDate.HasValue)
+                        { @($"{startDate.Value:MMM d, yyyy} – {endDate.Value:MMM d, yyyy}") }
+                        else
+                        { <span>Not selected</span> }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Travelers -->
+            <div class="summary-row">
+                <div class="summary-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="summary-label">Travelers</div>
+                    <div class="summary-value">@numTravelers</div>
+                </div>
+            </div>
+
+            <!-- Interests -->
+            <div class="summary-row">
+                <div class="summary-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="summary-label">Interests</div>
+                    <div style="margin-top: 4px;">
+                        @if (selectedInterests.Any())
+                        {
+                            @foreach (var i in selectedInterests)
+                            {
+                                <span class="interest-tag">@i</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="summary-value">None selected</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estimated Cost -->
+            <div class="cost-row">
+                <div>
+                    <div class="cost-label">Estimated Cost</div>
+                    <div class="cost-label-sub">Based on selected activities and duration</div>
+                </div>
+                <div class="cost-amount">@EstimatedCostRange</div>
+            </div>
+
+            <!-- Actions -->
+            <div class="summary-actions">
+                <button class="btn-save-itinerary" @onclick="SaveItinerary">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Save Itinerary
+                </button>
+                <button class="btn-share" @onclick="ShareItinerary">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                        <polyline points="16 6 12 2 8 6"/>
+                        <line x1="12" y1="2" x2="12" y2="15"/>
+                    </svg>
+                    Share
+                </button>
+            </div>
+        </div>
+    }
+
+    <!-- ── NAVIGATION BUTTONS ── -->
+    <div class="planner-nav">
+        <button class="btn-prev" @onclick="GoBack" disabled="@(currentStep == 1)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Previous
+        </button>
+
+        @if (currentStep < 4)
+        {
+            <button class="btn-next" @onclick="GoNext">
+                Next
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+        }
+        else
+        {
+            <button class="btn-next complete" @onclick="Complete">
+                Complete
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+        }
+    </div>
+
+</div>
+
+@code {
+    /* ── State ── */
+    private int              currentStep         = 1;
+    private List<Destination> allDestinations    = new();
+
+    // Step 1
+    private int              selectedDestinationId = 0;
+    private DateTime?        startDate             = null;
+    private DateTime?        endDate               = null;
+    private int              numTravelers          = 1;
+    private string           tripType              = "Solo";
+    private List<string>     tripTypes             = new() { "Solo", "Couple", "Family", "Group" };
+
+    // Step 2
+    private List<string> availableInterests = new()
+    {
+        "Heritage", "Adventure", "Food & Dining", "Shopping",
+        "Nature", "Beach & Water Sports", "Desert Experiences", "Cultural Events"
+    };
+    private HashSet<string> selectedInterests = new();
+
+    // Step 3
+    private List<ItineraryDay> itineraryDays = new();
+
+    /* ── Init ── */
+    protected override async Task OnInitializedAsync()
+    {
+        try { allDestinations = await DestinationService.GetAllAsync(); }
+        catch (Exception ex) { Console.WriteLine(ex); }
+
+        BuildItineraryDays();
+    }
+
+    private void BuildItineraryDays()
+    {
+        var days = TripDurationDays > 0 ? TripDurationDays : 3;
+        itineraryDays = Enumerable.Range(1, days).Select(d => new ItineraryDay
+        {
+            DayNumber = d,
+            Slots = new List<ActivitySlot>
+            {
+                new() { Time = "09:00 AM", Label = "Morning activity slot" },
+                new() { Time = "02:00 PM", Label = "Afternoon activity slot" }
+            }
+        }).ToList();
+    }
+
+    /* ── Navigation ── */
+    private void GoNext()
+    {
+        if (currentStep == 1) BuildItineraryDays();
+        if (currentStep < 4) currentStep++;
+    }
+
+    private void GoBack()
+    {
+        if (currentStep > 1) currentStep--;
+    }
+
+    private void Complete() => Nav.NavigateTo("/itinerary");
+
+    /* ── Step 1 helpers ── */
+    private void IncrementTravelers() { if (numTravelers < 20) numTravelers++; }
+    private void DecrementTravelers() { if (numTravelers > 1)  numTravelers--; }
+
+    /* ── Step 2 helpers ── */
+    private void ToggleInterest(string item)
+    {
+        if (selectedInterests.Contains(item)) selectedInterests.Remove(item);
+        else                                  selectedInterests.Add(item);
+    }
+
+    /* ── Step 3 helpers ── */
+    private void AddActivitySlot(int dayNum)
+    {
+        var day = itineraryDays.FirstOrDefault(d => d.DayNumber == dayNum);
+        if (day == null) return;
+        var nextHour = 9 + day.Slots.Count * 3;
+        var ampm     = nextHour >= 12 ? "PM" : "AM";
+        var hour     = nextHour > 12 ? nextHour - 12 : nextHour;
+        day.Slots.Add(new ActivitySlot { Time = $"{hour:D2}:00 {ampm}", Label = "New activity slot" });
+    }
+
+    /* ── Summary helpers ── */
+    private string? GetDestinationName()
+        => allDestinations.FirstOrDefault(d => d.Id == selectedDestinationId)?.Name;
+
+    private int TripDurationDays
+        => (startDate.HasValue && endDate.HasValue && endDate > startDate)
+            ? (int)(endDate.Value - startDate.Value).TotalDays
+            : 0;
+
+    private string EstimatedCostRange
+    {
+        get
+        {
+            var base1 = numTravelers * 300 + TripDurationDays * 150;
+            var base2 = numTravelers * 500 + TripDurationDays * 250;
+            if (base1 == 0) return "$1,200 – $2,000";
+            return $"${base1:N0} – ${base2:N0}";
+        }
+    }
+
+    private async Task SaveItinerary()
+    {
+        // Persist logic via IItineraryService if available
+        try
+        {
+            if (ItineraryService != null)
+            {
+                var plan = new Itinerary
+                {
+                    DestinationId = selectedDestinationId,
+                    StartDate     = startDate ?? DateTime.Today,
+                    EndDate       = endDate   ?? DateTime.Today.AddDays(3),
+                    Travelers     = numTravelers,
+                    TripType      = tripType,
+                    Interests = selectedInterests.ToList()
+                };
+                await ItineraryService.SaveAsync(plan);
+            }
+        }
+        catch (Exception ex) { Console.WriteLine(ex); }
+
+        Nav.NavigateTo("/itinerary");
+    }
+
+    private void ShareItinerary()
+    {
+        // Placeholder – could open a share modal
+    }
+
+    /* ── Inner models ── */
+    private class ItineraryDay
+    {
+        public int                DayNumber { get; set; }
+        public List<ActivitySlot> Slots     { get; set; } = new();
+    }
+
+    private class ActivitySlot
+    {
+        public string Time  { get; set; } = "";
+        public string Label { get; set; } = "";
+    }
+}
