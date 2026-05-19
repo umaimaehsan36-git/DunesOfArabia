@@ -1,0 +1,716 @@
+@page "/favorites"
+@layout DunesOfArabia.Components.Layout.MainLayout
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize]
+
+@inject IDestinationService  DestinationService
+@inject IItineraryService    ItineraryService
+@inject NavigationManager    Nav
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Saved Trips – Saudi Heritage</PageTitle>
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@@400;600;700&family=Lato:wght@@300;400;500;600&display=swap');
+
+    .dashboard-page {
+        background: #F5EFE8;
+        min-height: 100vh;
+        font-family: 'Lato', sans-serif;
+        padding: 2.4rem 2.2rem 4rem;
+    }
+
+    .dash-header { margin-bottom: 1.8rem; }
+
+    .dash-header h1 {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: clamp(1.7rem, 3vw, 2.2rem);
+        color: #1C1008;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+    }
+
+    .dash-header p { font-size: 0.87rem; color: #8A7566; font-weight: 300; }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.1rem;
+        margin-bottom: 1.4rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.4rem 1.6rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 1px 6px rgba(90,55,35,0.06);
+    }
+
+    .stat-label {
+        font-size: 0.78rem;
+        color: #9A8878;
+        margin-bottom: 0.4rem;
+        font-weight: 400;
+    }
+
+    .stat-value {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 2rem;
+        color: #1C1008;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #C4A090;
+        opacity: 0.8;
+    }
+
+    /* ── MAIN GRID ── */
+    .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 1.1rem;
+        margin-bottom: 1.4rem;
+    }
+
+    /* ── TRIP HERO ── */
+    .trip-hero {
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+        min-height: 220px;
+        background: #2E1A0E;
+        box-shadow: 0 2px 10px rgba(90,55,35,0.1);
+    }
+
+    .trip-hero img {
+        width: 100%;
+        height: 100%;
+        min-height: 220px;
+        object-fit: cover;
+        display: block;
+        opacity: 0.72;
+    }
+
+    .trip-hero-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to right, rgba(15,8,3,0.72) 40%, rgba(15,8,3,0.1) 100%);
+        padding: 2rem 2.2rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+    }
+
+    .trip-badge {
+        display: inline-block;
+        padding: 3px 12px;
+        background: #C8873A;
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 700;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.6rem;
+        width: fit-content;
+    }
+
+    .trip-hero-name {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.8rem;
+        color: white;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+    }
+
+    .trip-hero-dates {
+        font-size: 0.83rem;
+        color: rgba(255,255,255,0.78);
+        margin-bottom: 0.7rem;
+    }
+
+    .trip-hero-countdown {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.82rem;
+        color: rgba(255,255,255,0.7);
+        margin-bottom: 1.3rem;
+    }
+
+    .btn-view-itinerary {
+        display: inline-flex;
+        align-items: center;
+        padding: 9px 20px;
+        background: white;
+        color: #1C1008;
+        border: none;
+        border-radius: 7px;
+        font-size: 0.84rem;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.18s;
+        text-decoration: none;
+        width: fit-content;
+    }
+
+    .btn-view-itinerary:hover { background: #F0E8DF; color: #1C1008; }
+
+    /* ── RECENT ACTIVITY ── */
+    .recent-activity {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem 1.6rem;
+        box-shadow: 0 1px 6px rgba(90,55,35,0.06);
+    }
+
+    .panel-title {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.1rem;
+        color: #1C1008;
+        font-weight: 700;
+        margin-bottom: 1.2rem;
+    }
+
+    .activity-item {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #F0E8DC;
+    }
+
+    .activity-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+    .activity-action {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #1C1008;
+        margin-bottom: 0.15rem;
+    }
+
+    .activity-detail {
+        font-size: 0.82rem;
+        color: #5A4A3A;
+        margin-bottom: 0.15rem;
+        line-height: 1.4;
+    }
+
+    .activity-time {
+        font-size: 0.74rem;
+        color: #B0A090;
+    }
+
+    /* ── BOTTOM GRID ── */
+    .bottom-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.1rem;
+        margin-bottom: 1.4rem;
+    }
+
+    .panel-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.4rem 1.5rem;
+        box-shadow: 0 1px 6px rgba(90,55,35,0.06);
+    }
+
+    .panel-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.2rem;
+    }
+
+    .panel-card-header h3 {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.08rem;
+        color: #1C1008;
+        font-weight: 700;
+    }
+
+    .view-all-link {
+        font-size: 0.8rem;
+        color: #7B3121;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        background: none;
+        border: none;
+        font-family: inherit;
+        padding: 0;
+    }
+
+    .view-all-link:hover { text-decoration: underline; }
+
+    /* ── SAVED DEST GRID ── */
+    .saved-dest-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.7rem;
+    }
+
+    .saved-dest-thumb {
+        position: relative;
+        border-radius: 10px;
+        overflow: hidden;
+        aspect-ratio: 1 / 1;
+        cursor: pointer;
+        transition: transform 0.22s;
+    }
+
+    .saved-dest-thumb:hover { transform: scale(1.03); }
+
+    .saved-dest-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .saved-dest-name {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 6px 9px;
+        background: linear-gradient(to top, rgba(15,8,3,0.78) 0%, transparent 100%);
+        color: white;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    /* ── TRIP ROWS ── */
+    .trip-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #FAF6F1;
+        border-radius: 8px;
+        padding: 0.9rem 1.1rem;
+        margin-bottom: 0.6rem;
+        cursor: pointer;
+        transition: background 0.18s;
+    }
+
+    .trip-row:last-child { margin-bottom: 0; }
+    .trip-row:hover { background: #F0E8DF; }
+
+    .trip-row-name {
+        font-size: 0.9rem;
+        color: #1C1008;
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+    }
+
+    .trip-row-date { font-size: 0.78rem; color: #9A8878; }
+
+    .trip-row-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+        flex-shrink: 0;
+    }
+
+    .trip-status {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .status-upcoming  { background: #C8873A; color: white; }
+    .status-completed { background: #7B3121; color: white; }
+    .status-planning  { background: #D4C0B4; color: #5A3A2A; }
+
+    .trip-act-count { font-size: 0.72rem; color: #9A8878; }
+
+    /* ── CTA ROW ── */
+    .cta-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.1rem;
+    }
+
+    .cta-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 1rem;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background 0.2s, transform 0.15s;
+        border: none;
+    }
+
+    .cta-btn:hover { transform: translateY(-2px); }
+
+    .cta-primary { background: #7B3121; color: white; }
+    .cta-primary:hover { background: #5C2218; color: white; }
+
+    .cta-outline { background: white; color: #3A2A1E; border: 1.5px solid #C4A090; }
+    .cta-outline:hover { background: #FAF0E8; border-color: #7B3121; color: #3A2A1E; }
+
+    /* ── EMPTY STATE ── */
+    .empty-hint {
+        font-size: 0.85rem;
+        color: #9A8878;
+        text-align: center;
+        padding: 1.5rem 0;
+    }
+
+    .empty-hint a { color: #7B3121; font-weight: 600; text-decoration: none; }
+    .empty-hint a:hover { text-decoration: underline; }
+
+    @@media (max-width: 1100px) {
+        .main-grid   { grid-template-columns: 1fr; }
+        .bottom-grid { grid-template-columns: 1fr; }
+    }
+
+    @@media (max-width: 768px) {
+        .dashboard-page  { padding: 1.5rem 1.2rem 3rem; }
+        .stats-row       { grid-template-columns: 1fr; }
+        .saved-dest-grid { grid-template-columns: repeat(2,1fr); }
+        .cta-row         { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="dashboard-page">
+
+    <!-- PAGE HEADER -->
+    <div class="dash-header">
+        <h1>Welcome back, @userName</h1>
+        <p>Your Saudi Arabia adventure dashboard</p>
+    </div>
+
+    <!-- STATS ROW -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Saved Destinations</div>
+                <div class="stat-value">@savedDestinations.Count</div>
+            </div>
+            <div class="stat-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">My Trips</div>
+                <div class="stat-value">@myTrips.Count</div>
+            </div>
+            <div class="stat-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                </svg>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Activities Booked</div>
+                <div class="stat-value">@activitiesBooked</div>
+            </div>
+            <div class="stat-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                    <polyline points="17 6 23 6 23 12"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN GRID: HERO + RECENT ACTIVITY -->
+    <div class="main-grid">
+
+        <div class="trip-hero">
+            @if (upcomingTrip != null)
+            {
+                <img src="@upcomingTrip.ImageUrl" alt="@upcomingTrip.DestinationName"
+                     onerror="this.src='https://images.unsplash.com/photo-1616236197457-53e96373d0b0?w=900'" />
+                <div class="trip-hero-overlay">
+                    <span class="trip-badge">Upcoming Trip</span>
+                    <div class="trip-hero-name">@upcomingTrip.DestinationName</div>
+                    <div class="trip-hero-dates">@upcomingTrip.DateRange</div>
+                    <div class="trip-hero-countdown">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 6v6l4 2"/>
+                        </svg>
+                        @upcomingTrip.DaysUntil days until departure
+                    </div>
+                    <button class="btn-view-itinerary"
+                            @onclick="@(() => Nav.NavigateTo("/itinerary/" + upcomingTrip.ItineraryId))">
+                        View Itinerary
+                    </button>
+                </div>
+            }
+            else
+            {
+                <img src="https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=900" alt="Plan a trip" />
+                <div class="trip-hero-overlay">
+                    <span class="trip-badge">No Upcoming Trips</span>
+                    <div class="trip-hero-name">Start Planning</div>
+                    <div class="trip-hero-dates">Explore Saudi Arabia's finest destinations</div>
+                    <button class="btn-view-itinerary" style="margin-top:1.2rem"
+                            @onclick="@(() => Nav.NavigateTo("/planner"))">
+                        Plan a Trip
+                    </button>
+                </div>
+            }
+        </div>
+
+        <div class="recent-activity">
+            <div class="panel-title">Recent Activity</div>
+            @foreach (var item in recentActivity)
+            {
+                <div class="activity-item">
+                    <div class="activity-action">@item.Action</div>
+                    <div class="activity-detail">@item.Detail</div>
+                    <div class="activity-time">@item.TimeAgo</div>
+                </div>
+            }
+            @if (!recentActivity.Any())
+            {
+                <p class="empty-hint">No recent activity yet.</p>
+            }
+        </div>
+    </div>
+
+    <!-- BOTTOM GRID: SAVED DESTINATIONS + MY TRIPS -->
+    <div class="bottom-grid">
+
+        <div class="panel-card">
+            <div class="panel-card-header">
+                <h3>My Saved Destinations</h3>
+                <a href="/destinations" class="view-all-link">View All</a>
+            </div>
+            @if (savedDestinations.Any())
+            {
+                <div class="saved-dest-grid">
+                    @foreach (var dest in savedDestinations.Take(3))
+                    {
+                        var d = dest;
+                        <div class="saved-dest-thumb"
+                             @onclick="@(() => Nav.NavigateTo("/destinations/" + d.Id))">
+                            <img src="@d.ImageUrl" alt="@d.Name"
+                                 onerror="this.src='https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400'" />
+                            <div class="saved-dest-name">@d.Name</div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-hint">
+                    No saved destinations yet.<br/>
+                    <a href="/destinations">Browse destinations →</a>
+                </div>
+            }
+        </div>
+
+        <div class="panel-card">
+            <div class="panel-card-header">
+                <h3>My Trips</h3>
+                <a href="/itinerary" class="view-all-link">View All</a>
+            </div>
+            @if (myTrips.Any())
+            {
+                @foreach (var trip in myTrips.Take(4))
+                {
+                    var t = trip;
+                    <div class="trip-row"
+                         @onclick="@(() => Nav.NavigateTo("/itinerary/" + t.ItineraryId))">
+                        <div>
+                            <div class="trip-row-name">@t.DestinationName</div>
+                            <div class="trip-row-date">@t.MonthYear</div>
+                        </div>
+                        <div class="trip-row-right">
+                            <span class="trip-status @t.StatusClass">@t.Status</span>
+                            <span class="trip-act-count">@t.ActivityCount activities</span>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-hint">
+                    No trips planned yet.<br/>
+                    <a href="/planner">Plan your first trip →</a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- CTA ROW -->
+    <div class="cta-row">
+        <a href="/planner" class="cta-btn cta-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8"  y1="2" x2="8"  y2="6"/>
+                <line x1="3"  y1="10" x2="21" y2="10"/>
+            </svg>
+            Plan New Trip
+        </a>
+        <a href="/destinations" class="cta-btn cta-outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+            </svg>
+            Browse Destinations
+        </a>
+    </div>
+
+</div>
+
+@code {
+    // ── Inner view models ─────────────────────────────────────────────────────
+    private class TripSummary
+    {
+        public int    ItineraryId     { get; init; }
+        public string DestinationName { get; init; } = "";
+        public string MonthYear       { get; init; } = "";
+        public string DateRange       { get; init; } = "";
+        public int    DaysUntil       { get; init; }
+        public string Status          { get; init; } = "";
+        public string StatusClass     { get; init; } = "";
+        public int    ActivityCount   { get; init; }
+        public string ImageUrl        { get; init; } = "";
+    }
+
+    private class FeedItem
+    {
+        public string Action  { get; init; } = "";
+        public string Detail  { get; init; } = "";
+        public string TimeAgo { get; init; } = "";
+    }
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    private string            userName          = "Traveller";
+    private List<Destination> savedDestinations = new();
+    private List<TripSummary> myTrips           = new();
+    private TripSummary?      upcomingTrip      = null;
+    private List<FeedItem>    recentActivity    = new();
+    private int               activitiesBooked  = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Resolve display name
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        userName = auth.User.Identity?.Name ?? "Traveller";
+
+        try
+        {
+            // Destinations for saved list
+            var allDest = await DestinationService.GetAllAsync();
+            savedDestinations = allDest.Take(3).ToList();
+
+            // Itineraries — use GetAllAsync which is the standard method name
+            // If your service exposes a different method, swap below
+            var itineraries = await ItineraryService.GetAllAsync();
+
+            myTrips = itineraries.Select(itin =>
+            {
+                var dest      = allDest.FirstOrDefault(d => d.Id == itin.DestinationId);
+                var isUpcoming  = itin.StartDate > DateTime.Today;
+                var isCompleted = itin.EndDate   < DateTime.Today;
+                var statusLabel = isUpcoming ? "Upcoming" : isCompleted ? "Completed" : "Planning";
+                var statusCss   = isUpcoming ? "status-upcoming"
+                                : isCompleted ? "status-completed"
+                                : "status-planning";
+                return new TripSummary
+                {
+                    ItineraryId     = itin.Id,
+                    DestinationName = dest?.Name ?? "Trip",
+                    MonthYear       = itin.StartDate.ToString("MMMM yyyy"),
+                    DateRange       = itin.StartDate.ToString("MMMM d") + "-" +
+                                     itin.EndDate.Day + ", " + itin.EndDate.Year,
+                    DaysUntil       = Math.Max(0, (itin.StartDate - DateTime.Today).Days),
+                    Status          = statusLabel,
+                    StatusClass     = statusCss,
+                    ActivityCount   = itin.Activities?.Count ?? 0,
+                    ImageUrl        = dest?.ImageUrl ?? ""
+                };
+            }).ToList();
+
+            upcomingTrip     = myTrips.FirstOrDefault(t => t.Status == "Upcoming");
+            activitiesBooked = myTrips.Sum(t => t.ActivityCount);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            LoadFallback();
+        }
+
+        // Static recent activity feed
+        recentActivity = new()
+        {
+            new FeedItem { Action="Bookmarked", Detail="Desert Safari in Empty Quarter",       TimeAgo="2 hours ago" },
+            new FeedItem { Action="Reviewed",   Detail="Heritage Walking Tour in Diriyah",     TimeAgo="1 day ago"   },
+            new FeedItem { Action="Saved",      Detail="Red Sea Project to wishlist",           TimeAgo="3 days ago"  }
+        };
+    }
+
+    private void LoadFallback()
+    {
+        savedDestinations = new()
+        {
+            new Destination { Id=1,  Name="Riyadh",
+                ImageUrl="https://images.unsplash.com/photo-1586724237569-f3d0c1dee8c6?w=600" },
+            new Destination { Id=2,  Name="Jeddah",
+                ImageUrl="https://images.unsplash.com/photo-1539667284076-a4d98d9ac42b?w=600" },
+            new Destination { Id=10, Name="Asir Mountains",
+                ImageUrl="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600" }
+        };
+
+        myTrips = new()
+        {
+            new TripSummary
+            {
+                ItineraryId=1, DestinationName="AlUla",
+                MonthYear="June 2026", DateRange="June 15-20, 2026",
+                DaysUntil=32, Status="Upcoming", StatusClass="status-upcoming",
+                ActivityCount=5,
+                ImageUrl="https://images.unsplash.com/photo-1616236197457-53e96373d0b0?w=900"
+            },
+            new TripSummary
+            {
+                ItineraryId=2, DestinationName="Riyadh",
+                MonthYear="March 2026", DateRange="March 5-10, 2026",
+                DaysUntil=0, Status="Completed", StatusClass="status-completed",
+                ActivityCount=8,
+                ImageUrl="https://images.unsplash.com/photo-1586724237569-f3d0c1dee8c6?w=900"
+            }
+        };
+
+        upcomingTrip     = myTrips[0];
+        activitiesBooked = myTrips.Sum(t => t.ActivityCount);
+    }
+}

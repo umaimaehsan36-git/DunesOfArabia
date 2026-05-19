@@ -1,0 +1,653 @@
+@page "/profile"
+@layout DunesOfArabia.Components.Layout.MainLayout
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize]
+
+@inject IDestinationService DestinationService
+@inject IReviewService      ReviewService
+@inject NavigationManager   Nav
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Profile – Saudi Heritage</PageTitle>
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@@400;600;700&family=Lato:wght@@300;400;500;600&display=swap');
+
+    .profile-page {
+        background: #F5EFE8;
+        min-height: 100vh;
+        font-family: 'Lato', sans-serif;
+        padding: 2.2rem 2.2rem 4rem;
+    }
+
+    /* ── PAGE HEADING ── */
+    .page-heading { margin-bottom: 1.5rem; }
+
+    .page-heading h1 {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.9rem;
+        color: #1C1008;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+    }
+
+    .page-heading p { font-size: 0.85rem; color: #8A7566; font-weight: 300; }
+
+    /* ── PROFILE BANNER ── */
+    .profile-banner {
+        border-radius: 14px;
+        overflow: hidden;
+        margin-bottom: 1.3rem;
+        box-shadow: 0 2px 10px rgba(90,55,35,0.08);
+    }
+
+    .banner-top {
+        height: 100px;
+        background: linear-gradient(135deg, #7B3121 0%, #C8873A 60%, #D4A050 100%);
+    }
+
+    .banner-bottom {
+        background: white;
+        padding: 0 1.8rem 1.5rem;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .banner-left { display: flex; align-items: flex-start; gap: 1.2rem; flex: 1; }
+
+    .avatar-wrap {
+        position: relative;
+        margin-top: -38px;
+        flex-shrink: 0;
+    }
+
+    .avatar-circle {
+        width: 84px;
+        height: 84px;
+        background: #EDE8DF;
+        border: 4px solid white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #7B3121;
+        box-shadow: 0 2px 8px rgba(90,55,35,0.12);
+    }
+
+    .avatar-cam {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 26px;
+        height: 26px;
+        background: #7B3121;
+        border: 2px solid white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        cursor: pointer;
+    }
+
+    .user-info-block { padding-top: 0.8rem; }
+
+    .user-info-block h2 {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.35rem;
+        color: #1C1008;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+    }
+
+    .user-meta {
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.6rem;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.8rem;
+        color: #7A6658;
+    }
+
+    .user-bio {
+        font-size: 0.84rem;
+        color: #5A4A3A;
+        line-height: 1.6;
+        font-weight: 300;
+        max-width: 560px;
+    }
+
+    .btn-edit {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 10px 22px;
+        background: #7B3121;
+        color: white;
+        border: none;
+        border-radius: 7px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.2s;
+        white-space: nowrap;
+        margin-top: 0.8rem;
+        flex-shrink: 0;
+        align-self: center;
+    }
+
+    .btn-edit:hover { background: #5C2218; }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #EAE0D8;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-cell {
+        padding: 1.4rem 1.2rem;
+        text-align: center;
+        border-right: 1px solid #EAE0D8;
+    }
+
+    .stat-cell:last-child { border-right: none; }
+
+    .stat-num {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.9rem;
+        color: #7B3121;
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+        line-height: 1;
+    }
+
+    .stat-lbl { font-size: 0.8rem; color: #9A8878; }
+
+    /* ── TAB STRIP ── */
+    .tab-strip {
+        display: flex;
+        gap: 0.4rem;
+        margin-bottom: 1.4rem;
+    }
+
+    .tab-btn {
+        padding: 8px 20px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        font-family: inherit;
+        cursor: pointer;
+        border: 1.5px solid #C4A090;
+        background: white;
+        color: #5A3A2A;
+        transition: background 0.18s, border-color 0.18s, color 0.18s;
+    }
+
+    .tab-btn:hover { border-color: #7B3121; color: #7B3121; }
+
+    .tab-active {
+        background: #7B3121;
+        border-color: #7B3121;
+        color: white;
+    }
+
+    .tab-active:hover { background: #7B3121; color: white; }
+
+    /* ── PLACES GRID ── */
+    .places-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.2rem;
+    }
+
+    .place-card {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        height: 160px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(90,55,35,0.08);
+        transition: transform 0.22s, box-shadow 0.22s;
+    }
+
+    .place-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(90,55,35,0.14); }
+
+    .place-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.4s;
+    }
+
+    .place-card:hover img { transform: scale(1.06); }
+
+    .place-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, rgba(15,8,3,0.72) 0%, transparent 55%);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: 0.9rem 1rem;
+    }
+
+    .place-name {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.05rem;
+        color: white;
+        font-weight: 700;
+        margin-bottom: 0.15rem;
+    }
+
+    .place-date { font-size: 0.75rem; color: rgba(255,255,255,0.75); }
+
+    /* ── ACHIEVEMENTS GRID ── */
+    .achievements-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.2rem;
+    }
+
+    .ach-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.4rem 1.5rem 1.5rem;
+        box-shadow: 0 1px 6px rgba(90,55,35,0.06);
+        border: 1px solid #EAE0D8;
+    }
+
+    .ach-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 12px;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        margin-bottom: 0.9rem;
+        letter-spacing: 0.2px;
+    }
+
+    .badge-blue   { background: #E8F4FD; color: #1A6A9A; }
+    .badge-green  { background: #E8F9F0; color: #1A7A42; }
+    .badge-purple { background: #F5EAF9; color: #7A1A9A; }
+    .badge-amber  { background: #FFF3E0; color: #8A5A00; }
+    .badge-brown  { background: #FAF0E8; color: #7B3121; }
+
+    .ach-title {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.15rem;
+        color: #1C1008;
+        font-weight: 700;
+        margin-bottom: 0.6rem;
+    }
+
+    .ach-desc { font-size: 0.83rem; color: #7A6658; font-weight: 300; line-height: 1.5; }
+
+    /* ── REVIEWS ── */
+    .reviews-empty {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #EAE0D8;
+        padding: 2.5rem;
+        text-align: center;
+        color: #9A8878;
+        font-size: 0.88rem;
+    }
+
+    .review-card {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #EAE0D8;
+        padding: 1.2rem 1.4rem;
+        margin-bottom: 0.9rem;
+        box-shadow: 0 1px 4px rgba(90,55,35,0.05);
+    }
+
+    .review-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+
+    .review-dest {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 0.98rem;
+        color: #1C1008;
+        font-weight: 700;
+    }
+
+    .review-stars { color: #C8873A; font-size: 0.85rem; }
+    .review-date  { font-size: 0.74rem; color: #B0A090; margin-bottom: 0.5rem; }
+    .review-body  { font-size: 0.84rem; color: #5A4A3A; line-height: 1.6; font-weight: 300; }
+
+    @@media (max-width: 1100px) {
+        .places-grid, .achievements-grid { grid-template-columns: repeat(2,1fr); }
+        .stats-row { grid-template-columns: repeat(2,1fr); }
+    }
+
+    @@media (max-width: 768px) {
+        .profile-page    { padding: 1.5rem 1.2rem 3rem; }
+        .places-grid, .achievements-grid { grid-template-columns: 1fr; }
+        .stats-row       { grid-template-columns: repeat(2,1fr); }
+        .banner-bottom   { flex-direction: column; }
+        .user-meta       { flex-direction: column; gap: 0.4rem; align-items: flex-start; }
+    }
+</style>
+
+<div class="profile-page">
+
+    <!-- PAGE HEADING -->
+    <div class="page-heading">
+        <h1>Profile</h1>
+        <p>Manage your account and travel history</p>
+    </div>
+
+    <!-- PROFILE BANNER -->
+    <div class="profile-banner">
+        <div class="banner-top"></div>
+        <div class="banner-bottom">
+            <div class="banner-left">
+
+                <!-- Avatar -->
+                <div class="avatar-wrap">
+                    <div class="avatar-circle">@userInitials</div>
+                    <div class="avatar-cam">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                            <circle cx="12" cy="13" r="4"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- User info -->
+                <div class="user-info-block">
+                    <h2>@userName</h2>
+                    <div class="user-meta">
+                        <span class="meta-item">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            Riyadh, Saudi Arabia
+                        </span>
+                        <span class="meta-item">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8"  y1="2" x2="8"  y2="6"/>
+                                <line x1="3"  y1="10" x2="21" y2="10"/>
+                            </svg>
+                            Member since January 2024
+                        </span>
+                        <span class="meta-item">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="4"/>
+                                <path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/>
+                            </svg>
+                            @userEmail
+                        </span>
+                    </div>
+                    <div class="user-bio">
+                        Travel enthusiast exploring the beauty of Saudi Arabia. Passionate about heritage sites and desert adventures.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Profile -->
+            <button class="btn-edit" @onclick="@(() => Nav.NavigateTo("/settings"))">
+                Edit Profile
+            </button>
+        </div>
+    </div>
+
+    <!-- STATS ROW -->
+    <div class="stats-row">
+        <div class="stat-cell">
+            <div class="stat-num">12</div>
+            <div class="stat-lbl">Places Visited</div>
+        </div>
+        <div class="stat-cell">
+            <div class="stat-num">8</div>
+            <div class="stat-lbl">Trips Completed</div>
+        </div>
+        <div class="stat-cell">
+            <div class="stat-num">24</div>
+            <div class="stat-lbl">Reviews Written</div>
+        </div>
+        <div class="stat-cell">
+            <div class="stat-num">156</div>
+            <div class="stat-lbl">Photos Shared</div>
+        </div>
+    </div>
+
+    <!-- TAB STRIP -->
+    <div class="tab-strip">
+        <button class="tab-btn @(activeTab == "places"       ? "tab-active" : "")"
+                @onclick='() => activeTab = "places"'>Places Visited</button>
+        <button class="tab-btn @(activeTab == "achievements" ? "tab-active" : "")"
+                @onclick='() => activeTab = "achievements"'>Achievements</button>
+        <button class="tab-btn @(activeTab == "reviews"      ? "tab-active" : "")"
+                @onclick='() => activeTab = "reviews"'>My Reviews</button>
+    </div>
+
+    <!-- TAB: PLACES VISITED -->
+    @if (activeTab == "places")
+    {
+        <div class="places-grid">
+            @foreach (var place in visitedPlaces)
+            {
+                var p = place;
+                <div class="place-card" @onclick="@(() => Nav.NavigateTo("/destinations/" + p.DestId))">
+                    <img src="@p.ImageUrl" alt="@p.Name"
+                         onerror="this.src='https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600'" />
+                    <div class="place-overlay">
+                        <div class="place-name">@p.Name</div>
+                        <div class="place-date">@p.VisitDate</div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- TAB: ACHIEVEMENTS -->
+    @if (activeTab == "achievements")
+    {
+        <div class="achievements-grid">
+            @foreach (var ach in achievements)
+            {
+                <div class="ach-card">
+                    <div class="ach-badge @ach.BadgeClass">🏆 Achievement</div>
+                    <div class="ach-title">@ach.Title</div>
+                    <div class="ach-desc">@ach.Description</div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- TAB: MY REVIEWS -->
+    @if (activeTab == "reviews")
+    {
+        @if (!userReviews.Any())
+        {
+            <div class="reviews-empty">Your reviews will appear here</div>
+        }
+        else
+        {
+            @foreach (var rev in userReviews)
+            {
+                <div class="review-card">
+                    <div class="review-top">
+                        <span class="review-dest">@rev.DestName</span>
+                        <span class="review-stars">@StarString(rev.Stars)</span>
+                    </div>
+                    <div class="review-date">@rev.DateLabel</div>
+                    <div class="review-body">@rev.Comment</div>
+                </div>
+            }
+        }
+    }
+
+</div>
+
+@code {
+    // ── Inner models — all plain C# classes, no 'new string(...)' ───────────
+    private class VisitedPlace
+    {
+        public int    DestId    { get; init; }
+        public string Name      { get; init; } = "";
+        public string ImageUrl  { get; init; } = "";
+        public string VisitDate { get; init; } = "";
+    }
+
+    private class AchievementItem
+    {
+        public string Title       { get; init; } = "";
+        public string Description { get; init; } = "";
+        public string BadgeClass  { get; init; } = "badge-brown";
+    }
+
+    private class ReviewDisplay
+    {
+        public string DestName  { get; init; } = "";
+        public int    Stars     { get; init; }
+        public string DateLabel { get; init; } = "";
+        public string Comment   { get; init; } = "";
+    }
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    private string                userName     = "Traveller";
+    private string                userInitials = "AA";
+    private string                userEmail    = "user@example.com";
+    private string                activeTab    = "places";
+
+    private List<VisitedPlace>    visitedPlaces = new();
+    private List<AchievementItem> achievements  = new();
+    private List<ReviewDisplay>   userReviews   = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = auth.User;
+        userName     = user.Identity?.Name ?? "Traveller";
+        userInitials = GetInitials(userName);
+        userEmail    = user.FindFirst(c => c.Type.Contains("email"))?.Value
+                       ?? "user@example.com";
+
+        // ── Visited Places (loaded from DB destinations) ──────────────────
+        try
+        {
+            var allDest = await DestinationService.GetAllAsync();
+
+            visitedPlaces = new()
+            {
+                new VisitedPlace { DestId=3,  Name="AlUla",   VisitDate="June 2026",
+                    ImageUrl = allDest.FirstOrDefault(d => d.Id == 3)?.ImageUrl
+                               ?? "https://images.unsplash.com/photo-1616236197457-53e96373d0b0?w=700" },
+                new VisitedPlace { DestId=1,  Name="Riyadh",  VisitDate="March 2026",
+                    ImageUrl = allDest.FirstOrDefault(d => d.Id == 1)?.ImageUrl
+                               ?? "https://images.unsplash.com/photo-1586724237569-f3d0c1dee8c6?w=700" },
+                new VisitedPlace { DestId=2,  Name="Jeddah",  VisitDate="January 2026",
+                    ImageUrl = allDest.FirstOrDefault(d => d.Id == 2)?.ImageUrl
+                               ?? "https://images.unsplash.com/photo-1539667284076-a4d98d9ac42b?w=700" }
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            visitedPlaces = new()
+            {
+                new VisitedPlace { DestId=3,  Name="AlUla",   VisitDate="June 2026",
+                    ImageUrl="https://images.unsplash.com/photo-1616236197457-53e96373d0b0?w=700" },
+                new VisitedPlace { DestId=1,  Name="Riyadh",  VisitDate="March 2026",
+                    ImageUrl="https://images.unsplash.com/photo-1586724237569-f3d0c1dee8c6?w=700" },
+                new VisitedPlace { DestId=2,  Name="Jeddah",  VisitDate="January 2026",
+                    ImageUrl="https://images.unsplash.com/photo-1539667284076-a4d98d9ac42b?w=700" }
+            };
+        }
+
+        // ── Achievements (static) ─────────────────────────────────────────
+        achievements = new()
+        {
+            new AchievementItem { Title="Explorer",
+                Description="Visited 10+ destinations", BadgeClass="badge-blue"   },
+            new AchievementItem { Title="Reviewer",
+                Description="Written 20+ reviews",      BadgeClass="badge-green"  },
+            new AchievementItem { Title="Photographer",
+                Description="Shared 100+ photos",       BadgeClass="badge-purple" }
+        };
+
+        // ── Reviews — use Review model's actual fields: DestinationId, Stars, Comment ──
+        try
+        {
+            var allDest  = await DestinationService.GetAllAsync();
+            var reviews  = await ReviewService.GetAllAsync();
+            var myUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+
+            userReviews = reviews
+                .Where(r => r.UserId == myUserId)
+                .Select(r =>
+                {
+                    var dest = allDest.FirstOrDefault(d => d.Id == r.DestinationId);
+                    return new ReviewDisplay
+                    {
+                        DestName  = dest?.Name ?? "Destination",
+                        Stars     = r.StarRating,
+                        DateLabel = r.CreatedAt.ToString("MMMM yyyy"),
+                        Comment   = r.Comment ?? ""
+                    };
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            userReviews = new(); // empty → "Your reviews will appear here"
+        }
+    }
+
+    // Builds "★★★★☆" without new string() expression syntax
+    private static string StarString(int stars)
+    {
+        var sb = new System.Text.StringBuilder();
+        for (int i = 0; i < 5; i++)
+            sb.Append(i < stars ? '★' : '☆');
+        return sb.ToString();
+    }
+
+    private static string GetInitials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        var parts = name.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            ? $"{parts[0][0]}{parts[1][0]}".ToUpper()
+            : name[0].ToString().ToUpper();
+    }
+}
