@@ -130,7 +130,7 @@
         color: #5A3A2A;
     }
 
-    .filter-btn:hover { border-color: #7B3121; color: #7B3121; }
+    .filter-btn:hover  { border-color: #7B3121; color: #7B3121; }
     .filter-btn.active { background: #7B3121; border-color: #7B3121; color: white; }
 
     .error-banner {
@@ -272,12 +272,14 @@
         overflow: hidden;
     }
 
+    /* ── FIXED: only Explore button — no direct Book Now here.
+       The correct flow is: Destinations → Explore → DestinationDetails → Plan Trip → Checkout ── */
     .btn-explore {
         display: block;
         width: 100%;
-        padding: 10px;
+        padding: 11px;
         text-align: center;
-        font-size: 0.85rem;
+        font-size: 0.84rem;
         font-weight: 600;
         color: #7B3121;
         border: 1.5px solid #C8A882;
@@ -287,16 +289,17 @@
         background: transparent;
         cursor: pointer;
         transition: background 0.2s, color 0.2s, border-color 0.2s;
+        margin-top: auto;
     }
 
     .btn-explore:hover { background: #7B3121; color: white; border-color: #7B3121; }
 
     .empty-state {
-        grid-column: 1 / -1;
         text-align: center;
         padding: 4rem 2rem;
         background: white;
         border-radius: 12px;
+        margin-bottom: 0.5rem;
     }
 
     .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
@@ -357,7 +360,8 @@
                    type="search"
                    placeholder="Search destinations, regions..."
                    @bind="searchQuery"
-                   @bind:event="oninput" />
+                   @bind:event="oninput"
+                   @bind:after="RefreshDisplayed" />
         </div>
 
         <div class="sort-wrap">
@@ -368,13 +372,11 @@
                 <line x1="21" y1="18" x2="3" y2="18"/>
             </svg>
             <label for="sortSelect" class="visually-hidden">Sort by</label>
-            <select id="sortSelect" class="sort-select" @bind="sortOrder">
+            <select id="sortSelect" class="sort-select" @bind="sortOrder" @bind:after="RefreshDisplayed">
                 <option value="popular">Most Popular</option>
                 <option value="rating_desc">Top Rated</option>
                 <option value="name_asc">A – Z</option>
                 <option value="name_desc">Z – A</option>
-                <option value="cost_asc">Lowest Cost</option>
-                <option value="cost_desc">Highest Cost</option>
             </select>
         </div>
     </div>
@@ -417,19 +419,18 @@
     }
     else
     {
+        @if (!displayedDestinations.Any())
+        {
+            <div class="empty-state">
+                <div class="empty-icon" aria-hidden="true">🔍</div>
+                <h3>No destinations found</h3>
+                <p>Try adjusting your search or clearing the filters.</p>
+            </div>
+        }
+
         <div class="destinations-grid">
-            @if (!displayedDestinations.Any())
+            @foreach (var dest in displayedDestinations)
             {
-                <div class="empty-state">
-                    <div class="empty-icon" aria-hidden="true">🔍</div>
-                    <h3>No destinations found</h3>
-                    <p>Try adjusting your search or clearing the filters.</p>
-                </div>
-            }
-            else
-            {
-                @foreach (var dest in displayedDestinations)
-                {
                     <div class="dest-card">
                         <div class="card-img-wrap">
                             <img src="@dest.ImageUrl" alt="@dest.Name"
@@ -465,10 +466,13 @@
                                 @dest.Province
                             </div>
                             <p class="card-desc">@dest.Description</p>
-                            <a href="/destination/@dest.Id" class="btn-explore" aria-label="Explore @dest.Name">Explore</a>
+
+                            
+                            <a href="/destination/@dest.Id" class="btn-explore" aria-label="Explore @dest.Name">
+                                Explore →
+                            </a>
                         </div>
                     </div>
-                }
             }
         </div>
 
@@ -481,18 +485,16 @@
 </div>
 
 @code {
-    // ── State ─────────────────────────────────────────────────────────────────
-    private List<Destination>   allDestinations      = new();
-    private HashSet<int>        favoriteIds          = new();
-    private List<Destination>   displayedDestinations = new(); // materialized — avoids double enumeration
-    private bool                isLoading            = true;
+    private List<Destination>   allDestinations       = new();
+    private HashSet<int>        favoriteIds           = new();
+    private List<Destination>   displayedDestinations = new();
+    private bool                isLoading             = true;
     private string?             errorMessage;
-    private string              searchQuery          = "";
-    private string              selectedCategory     = "";
-    private string              sortOrder            = "popular";
-    private bool                isAuthenticated      = false;
+    private string              searchQuery           = "";
+    private string              selectedCategory      = "";
+    private string              sortOrder             = "popular";
+    private bool                isAuthenticated       = false;
 
-    // Category definitions kept in one place — avoids repetition in markup
     private record CategoryItem(string Label, string Value);
     private static readonly CategoryItem[] Categories =
     {
@@ -505,10 +507,8 @@
         new("Urban",      "Urban"),
     };
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
     protected override async Task OnInitializedAsync()
     {
-        // Resolve auth state via the registered AuthenticationStateProvider
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
 
@@ -516,7 +516,6 @@
         {
             allDestinations = await DestinationService.GetAllAsync();
 
-            // Load persisted favorites for authenticated users
             if (isAuthenticated)
             {
                 var userId = authState.User.FindFirst(
@@ -540,22 +539,12 @@
         isLoading = false;
     }
 
-    // ── Filter / Sort ─────────────────────────────────────────────────────────
     private void SetCategory(string cat)
     {
         selectedCategory = cat;
         RefreshDisplayed();
     }
 
-    // Called whenever search or sort changes via property setters below
-    private string _searchQuery = "";
-    private string SearchQuery
-    {
-        get => _searchQuery;
-        set { _searchQuery = value; searchQuery = value; RefreshDisplayed(); }
-    }
-
-    // Materialize once per filter/sort change — single enumeration
     private void RefreshDisplayed()
     {
         var filtered = allDestinations
@@ -573,20 +562,15 @@
             "rating_desc" => filtered.OrderByDescending(d => d.Rating),
             "name_asc"    => filtered.OrderBy(d => d.Name),
             "name_desc"   => filtered.OrderByDescending(d => d.Name),
-            "cost_asc"    => filtered.OrderBy(d => d.Cost),
-            "cost_desc"   => filtered.OrderByDescending(d => d.Cost),
             _             => filtered
         }).ToList();
     }
 
-    // ── Favorites ─────────────────────────────────────────────────────────────
     private async Task ToggleFavorite(int destinationId)
     {
-        // Redirect unauthenticated users to login
         if (!isAuthenticated)
         {
-            var returnUrl = Uri.EscapeDataString($"/destinations");
-            Nav.NavigateTo($"/Account/Login?returnUrl={returnUrl}");
+            Nav.NavigateTo($"/Account/Login?returnUrl={Uri.EscapeDataString("/destinations")}");
             return;
         }
 
