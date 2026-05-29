@@ -103,7 +103,7 @@
         <AuthorizeView>
             <Authorized>
                 <span class="user-name">@context.User.Identity?.Name</span>
-                <form action="Account/Logout" method="post" style="display:inline;">
+                <form action="/Account/Logout" method="post" style="display:inline;">
                     <AntiforgeryToken />
                     <input type="hidden" name="returnUrl" value="/" />
                     <button type="submit" class="logout-btn">Logout</button>
