@@ -1,408 +1,310 @@
-@page "/booking-confirmation/{id:int}"
+@page "/booking-confirmation/{BookingId:int}"
 @layout DunesOfArabia.Components.Layout.MainLayout
 @rendermode InteractiveServer
 
 @inject IBookingService BookingService
 @inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JS
+
+@using System.Security.Claims
+@using DunesOfArabia.Services
+@using DunesOfArabia.Models
 
 <PageTitle>Booking Confirmed – Dunes of Arabia</PageTitle>
 
-<div class="confirmation-page">
-    @if(booking == null)
-    {
-        <div class="loading">
-            <div class="spinner"></div>
-            <p>Loading confirmation...</p>
-        </div>
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@@400;600;700&family=Lato:wght@@300;400;500;600&display=swap');
+
+    .confirm-page { background: #F5EFE8; min-height: 100vh; padding: 2.5rem 1rem 4rem; font-family: 'Lato', sans-serif; }
+    .confirm-container { max-width: 720px; margin: 0 auto; }
+
+    /* ── Hero banner ── */
+    .confirm-hero { background: linear-gradient(135deg, #7B3121 0%, #C8873A 100%); border-radius: 16px; padding: 2.5rem 2rem; text-align: center; color: white; margin-bottom: 1.75rem; position: relative; overflow: hidden; }
+    .confirm-hero::before { content: ''; position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
+    .confirm-check { font-size: 3.5rem; margin-bottom: 0.75rem; display: block; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+    @@keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .confirm-hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 700; margin: 0 0 0.5rem; }
+    .confirm-hero p { font-size: 0.9rem; opacity: 0.9; margin: 0; font-weight: 300; }
+    .confirm-number { display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 0.5rem 1.25rem; font-size: 0.95rem; font-weight: 700; margin-top: 1rem; letter-spacing: 0.04em; }
+
+    /* ── Cards ── */
+    .confirm-card { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); margin-bottom: 1.25rem; overflow: hidden; }
+    .confirm-card-header { display: flex; align-items: center; gap: 0.75rem; padding: 1.1rem 1.5rem; border-bottom: 1px solid #F0E8DC; }
+    .confirm-card-header h2 { font-family: 'Playfair Display', serif; font-size: 1rem; color: #7B3121; margin: 0; font-weight: 700; }
+    .confirm-card-body { padding: 1.25rem 1.5rem; }
+
+    /* ── Detail grid ── */
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+    .detail-item label { font-size: 0.74rem; font-weight: 600; color: #9A8878; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 0.25rem; }
+    .detail-item span { font-size: 0.92rem; color: #1C1008; font-weight: 600; }
+
+    /* ── Status badge ── */
+    .status-badge { display: inline-flex; align-items: center; gap: 0.4rem; background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; border-radius: 20px; padding: 4px 12px; font-size: 0.78rem; font-weight: 700; }
+
+    /* ── Price summary ── */
+    .price-row { display: flex; justify-content: space-between; padding: 0.45rem 0; font-size: 0.88rem; color: #666; border-bottom: 1px solid #F5EFE8; }
+    .price-row:last-child { border-bottom: none; }
+    .price-row.total { font-size: 1rem; font-weight: 700; color: #7B3121; border-top: 2px solid #7B3121; padding-top: 0.65rem; margin-top: 0.25rem; }
+
+    /* ── Timeline ── */
+    .timeline { display: flex; flex-direction: column; gap: 0; }
+    .tl-item { display: flex; gap: 1rem; align-items: flex-start; padding-bottom: 1.1rem; position: relative; }
+    .tl-item:last-child { padding-bottom: 0; }
+    .tl-dot { width: 28px; height: 28px; border-radius: 50%; background: #7B3121; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0; position: relative; z-index: 1; }
+    .tl-item:not(:last-child) .tl-dot::after { content: ''; position: absolute; top: 28px; left: 50%; transform: translateX(-50%); width: 2px; height: calc(100% + 0.8rem); background: #DDD3C8; }
+    .tl-content h4 { font-size: 0.88rem; font-weight: 700; color: #1C1008; margin: 0 0 0.15rem; padding-top: 4px; }
+    .tl-content p { font-size: 0.8rem; color: #9A8878; margin: 0; font-weight: 300; }
+
+    /* ── Action buttons ── */
+    .action-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .btn-receipt { display: flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1.4rem; border: 1.5px solid #7B3121; border-radius: 8px; background: white; color: #7B3121; font-weight: 700; font-family: inherit; font-size: 0.88rem; cursor: pointer; transition: background 0.2s, color 0.2s; }
+    .btn-receipt:hover { background: #7B3121; color: white; }
+    .btn-receipt:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-dashboard { flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.85rem 1.5rem; background: #7B3121; color: white; border: none; border-radius: 8px; font-weight: 700; font-family: inherit; font-size: 0.92rem; cursor: pointer; transition: background 0.2s; text-decoration: none; }
+    .btn-dashboard:hover { background: #5C2218; }
+
+    /* ── Help card ── */
+    .help-card { background: white; border-radius: 12px; padding: 1.5rem; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.07); margin-bottom: 1.25rem; }
+    .help-card h3 { font-family: 'Playfair Display', serif; color: #1C1008; margin: 0 0 0.4rem; font-size: 1.05rem; }
+    .help-card p { font-size: 0.85rem; color: #7A6658; margin: 0 0 0.75rem; }
+    .help-contacts { display: flex; align-items: center; justify-content: center; gap: 1.5rem; flex-wrap: wrap; font-size: 0.86rem; color: #7B3121; font-weight: 600; }
+    .help-contacts a { color: #7B3121; text-decoration: none; }
+    .help-contacts a:hover { text-decoration: underline; }
+
+    .loading-state { text-align: center; padding: 3rem; color: #9A8878; }
+
+    @@media (max-width: 580px) {
+        .detail-grid { grid-template-columns: 1fr; }
+        .action-row { flex-direction: column; }
+        .btn-dashboard { text-align: center; }
     }
-    else
-    {
-        <div class="confirmation-container">
-            <!-- Success Banner -->
-            <div class="success-banner">
-                <div class="success-icon">✅</div>
+
+    /* ── Receipt print styles ── */
+    @@media print {
+        .confirm-page { background: white; padding: 0; }
+        .action-row, .help-card { display: none !important; }
+        .confirm-hero { background: #7B3121 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+</style>
+
+@if (isLoading)
+{
+    <div class="confirm-page">
+        <div class="loading-state"><div style="font-size:2rem;margin-bottom:1rem;">⏳</div><p>Loading your confirmation…</p></div>
+    </div>
+}
+else if (booking == null)
+{
+    <div class="confirm-page">
+        <div class="loading-state">
+            <div style="font-size:2rem;margin-bottom:1rem;">❌</div>
+            <p>Booking not found. <a href="/destinations" style="color:#7B3121;font-weight:600;">Browse Destinations</a></p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="confirm-page">
+        <div class="confirm-container" id="receipt-content">
+
+            <!-- Hero -->
+            <div class="confirm-hero">
+                <span class="confirm-check">✅</span>
                 <h1>Booking Confirmed!</h1>
-                <p>Your adventure in Saudi Arabia is all set. Get ready for an unforgettable experience!</p>
+                <p>Your Saudi Arabia adventure is officially booked. Get ready to explore!</p>
+                <div class="confirm-number">@booking.ConfirmationNumber</div>
             </div>
 
             <!-- Booking Details -->
-            <div class="details-section">
-                <h2>Booking Details</h2>
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <label>Confirmation Number</label>
-                        <strong class="confirm-number">@booking.ConfirmationNumber</strong>
-                    </div>
-                    <div class="detail-item">
-                        <label>Booking ID</label>
-                        <strong>@booking.Id</strong>
-                    </div>
-                    <div class="detail-item">
-                        <label>Booking Date</label>
-                        <strong>@booking.CreatedDate.ToString("MMM dd, yyyy")</strong>
-                    </div>
-                    <div class="detail-item">
-                        <label>Status</label>
-                        <strong class="status-badge">🟢 @booking.Status</strong>
+            <div class="confirm-card">
+                <div class="confirm-card-header">
+                    <span>📋</span>
+                    <h2>Booking Details</h2>
+                    <span class="status-badge" style="margin-left:auto;">✓ @(booking.Status ?? "Confirmed")</span>
+                </div>
+                <div class="confirm-card-body">
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Confirmation #</label>
+                            <span>@booking.ConfirmationNumber</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Destination</label>
+                            <span>@(booking.Destination?.Name ?? "Saudi Arabia")</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Travel Dates</label>
+                            <span>@booking.StartDate.ToString("MMM d") – @booking.EndDate.ToString("MMM d, yyyy")</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Travelers</label>
+                            <span>@booking.NumberOfTravelers @(booking.NumberOfTravelers == 1 ? "person" : "people")</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Payment Method</label>
+                            <span style="text-transform:capitalize;">@(booking.PaymentMethod ?? "Card")</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Booked On</label>
+                            <span>@booking.CreatedAt.ToString("MMM d, yyyy")</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Trip Summary -->
-            <div class="trip-section">
-                <h2>Trip Summary</h2>
-                <div class="trip-info">
-                    @if(!string.IsNullOrEmpty(booking.Destination?.ImageUrl))
+            <!-- Price Summary -->
+            <div class="confirm-card">
+                <div class="confirm-card-header">
+                    <span>💰</span>
+                    <h2>Payment Summary</h2>
+                </div>
+                <div class="confirm-card-body">
+                    <div class="price-row"><span>Subtotal</span><span>SR @booking.Subtotal.ToString("N2")</span></div>
+                    <div class="price-row"><span>VAT (15%)</span><span>SR @booking.Tax.ToString("N2")</span></div>
+                    @if (booking.TotalPrice != booking.Subtotal + booking.Tax)
                     {
-                        <img src="@booking.Destination.ImageUrl" alt="Destination" class="trip-image"/>
+                        <div class="price-row" style="color:#2E7D32;"><span>Discount</span><span>− SR @((booking.Subtotal + booking.Tax - booking.TotalPrice).ToString("N2"))</span></div>
                     }
-                    <div class="trip-details">
-                        <h3>@booking.Destination?.Name</h3>
-                        <p><strong>📅 Dates:</strong> @booking.StartDate.ToString("MMM dd") - @booking.EndDate.ToString("MMM dd, yyyy")</p>
-                        <p><strong>👥 Travelers:</strong> @booking.NumberOfTravelers</p>
-                        <p><strong>📍 Location:</strong> @booking.Destination?.Province, Saudi Arabia</p>
+                    <div class="price-row total"><span>Total Paid</span><strong>SR @booking.TotalPrice.ToString("N2")</strong></div>
+                </div>
+            </div>
+
+            <!-- What's Next timeline -->
+            <div class="confirm-card">
+                <div class="confirm-card-header">
+                    <span>🗓️</span>
+                    <h2>What's Next?</h2>
+                </div>
+                <div class="confirm-card-body">
+                    <div class="timeline">
+                        <div class="tl-item">
+                            <div class="tl-dot">✉️</div>
+                            <div class="tl-content">
+                                <h4>Confirmation Email Sent</h4>
+                                <p>Check your inbox for your booking receipt and itinerary details.</p>
+                            </div>
+                        </div>
+                        <div class="tl-item">
+                            <div class="tl-dot">📋</div>
+                            <div class="tl-content">
+                                <h4>Review Your Itinerary</h4>
+                                <p>Log in to your dashboard to view, manage, or share your trip plan.</p>
+                            </div>
+                        </div>
+                        <div class="tl-item">
+                            <div class="tl-dot">🧳</div>
+                            <div class="tl-content">
+                                <h4>Prepare for Your Trip</h4>
+                                <p>Check visa requirements, pack essentials, and download offline maps.</p>
+                            </div>
+                        </div>
+                        <div class="tl-item">
+                            <div class="tl-dot">🌟</div>
+                            <div class="tl-content">
+                                <h4>Enjoy Saudi Arabia!</h4>
+                                <p>Your adventure begins on @booking.StartDate.ToString("MMMM d, yyyy").</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-row" style="margin-top:1.5rem;">
+                        <button class="btn-receipt" @onclick="DownloadReceipt" disabled="@isDownloading">
+                            @if (isDownloading) { <span>⏳</span> } else { <span>📄</span> }
+                            @(isDownloading ? "Preparing…" : "Download Receipt")
+                        </button>
+                        <a class="btn-dashboard" href="/dashboard">← Back to Dashboard</a>
                     </div>
                 </div>
             </div>
 
-            <!-- Payment Details -->
-            <div class="payment-section">
-                <h2>Payment Details</h2>
-                <div class="payment-info">
-                    <div class="payment-row">
-                        <span>Subtotal:</span>
-                        <span>SR @booking.Subtotal.ToString("N2")</span>
-                    </div>
-                    <div class="payment-row">
-                        <span>Tax (15%):</span>
-                        <span>SR @booking.Tax.ToString("N2")</span>
-                    </div>
-                    <div class="payment-row total">
-                        <strong>Total Paid:</strong>
-                        <strong>SR @booking.TotalPrice.ToString("N2")</strong>
-                    </div>
-                    <div class="payment-row">
-                        <span>Payment Method:</span>
-                        <span>@(booking.PaymentMethod ?? "Credit Card")</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Important Information -->
-            <div class="info-section">
-                <h2>📋 Important Information</h2>
-                <div class="info-boxes">
-                    <div class="info-box">
-                        <h4>Before You Travel</h4>
-                        <ul>
-                            <li>Check your visa requirements</li>
-                            <li>Ensure passport is valid for 6+ months</li>
-                            <li>Check weather conditions</li>
-                            <li>Pack appropriate clothing</li>
-                        </ul>
-                    </div>
-                    <div class="info-box">
-                        <h4>Cancellation Policy</h4>
-                        <ul>
-                            <li>Free cancellation up to 7 days before</li>
-                            <li>50% refund for 3-7 days before</li>
-                            <li>No refund within 3 days</li>
-                            <li>Full refund if cancelled by operator</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="action-section">
-                <h2>What's Next?</h2>
-                <div class="action-buttons">
-                    <button @onclick="DownloadReceipt" class="btn-secondary">
-                        📄 Download Receipt
-                    </button>
-                    <button @onclick='() => Nav.NavigateTo("/dashboard")'  class="btn-primary">
-                        ← Back to Dashboard
-                    </button>
-                </div>
-            </div>
-
-            <!-- Support -->
-            <div class="support-section">
+            <!-- Help -->
+            <div class="help-card">
                 <h3>Need Help?</h3>
-                <p>If you have any questions, contact our support team:</p>
-                <p>📧 support@dunesofrabia.com | 📞 +966 5XX XXX XXXX</p>
+                <p>If you have any questions, our support team is ready to assist you.</p>
+                <div class="help-contacts">
+                    <a href="mailto:support@dunesofarabia.com">✉️ support@dunesofarabia.com</a>
+                    <span>|</span>
+                    <a href="tel:+966920001234">📞 +966 920 001 234</a>
+                </div>
             </div>
+
         </div>
-    }
-</div>
+    </div>
+}
 
 @code {
-    [Parameter]
-    public int Id { get; set; }
+    [Parameter] public int BookingId { get; set; }
 
-    private Booking booking;
+    private Booking? booking;
+    private bool isLoading    = true;
+    private bool isDownloading = false;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            booking = await BookingService.GetByIdAsync(Id);
-            if(booking == null)
+            var auth   = await AuthStateProvider.GetAuthenticationStateAsync();
+            var userId = auth.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+            if (string.IsNullOrEmpty(userId))
             {
-                Nav.NavigateTo("/");
+                Nav.NavigateTo($"/Account/Login?returnUrl=/booking-confirmation/{BookingId}");
+                return;
             }
+
+            booking = await BookingService.GetByIdAsync(BookingId);
+
+            // Security: ensure this booking belongs to the current user
+            if (booking != null && booking.UserId != userId)
+                booking = null;
         }
-        catch(Exception ex)
-        {
-            Console.WriteLine($"Error: {ex.Message}");
-        }
+        catch { booking = null; }
+        finally { isLoading = false; }
     }
 
-    private void DownloadReceipt()
+    private async Task DownloadReceipt()
     {
-        Console.WriteLine("Downloading receipt...");
-        // Implement PDF generation and download
+        if (booking == null) return;
+        isDownloading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Build a plain-text receipt and trigger a browser download via JS
+            var lines = new System.Text.StringBuilder();
+            lines.AppendLine("════════════════════════════════════════");
+            lines.AppendLine("       DUNES OF ARABIA — BOOKING RECEIPT");
+            lines.AppendLine("════════════════════════════════════════");
+            lines.AppendLine($"Confirmation #  : {booking.ConfirmationNumber}");
+            lines.AppendLine($"Status          : {booking.Status ?? "Confirmed"}");
+            lines.AppendLine($"Destination     : {booking.Destination?.Name ?? "Saudi Arabia"}");
+            lines.AppendLine($"Travel Dates    : {booking.StartDate:MMM d, yyyy} – {booking.EndDate:MMM d, yyyy}");
+            lines.AppendLine($"Travelers       : {booking.NumberOfTravelers}");
+            lines.AppendLine($"Payment Method  : {booking.PaymentMethod ?? "Card"}");
+            lines.AppendLine($"Booked On       : {booking.CreatedAt:MMM d, yyyy HH:mm}");
+            lines.AppendLine("────────────────────────────────────────");
+            lines.AppendLine($"Subtotal        : SR {booking.Subtotal:N2}");
+            lines.AppendLine($"VAT (15%)       : SR {booking.Tax:N2}");
+            if (booking.TotalPrice != booking.Subtotal + booking.Tax)
+                lines.AppendLine($"Discount        : − SR {(booking.Subtotal + booking.Tax - booking.TotalPrice):N2}");
+            lines.AppendLine($"TOTAL PAID      : SR {booking.TotalPrice:N2}");
+            lines.AppendLine("────────────────────────────────────────");
+            lines.AppendLine("Support: support@dunesofarabia.com");
+            lines.AppendLine("Phone  : +966 920 001 234");
+            lines.AppendLine("Website: www.dunesofarabia.com");
+            lines.AppendLine("════════════════════════════════════════");
+
+            var fileName = $"DunesOfArabia_Receipt_{booking.ConfirmationNumber}.txt";
+            await JS.InvokeVoidAsync("downloadTextFile", fileName, lines.ToString());
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Could not download receipt: {ex.Message}");
+        }
+        finally
+        {
+            isDownloading = false;
+            StateHasChanged();
+        }
     }
 }
-
-<style>
-    .confirmation-page {
-        background: linear-gradient(135deg, #F5EFE8 0%, #E8DCC8 100%);
-        min-height: 100vh;
-        padding: 2rem 1rem;
-    }
-
-    .loading {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 400px;
-        color: #8B4513;
-    }
-
-    .spinner {
-        border: 4px solid #DDD;
-        border-top: 4px solid #8B4513;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        margin-bottom: 1rem;
-    }
-
-    @@keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    .confirmation-container {
-        max-width: 900px;
-        margin: 0 auto;
-    }
-
-    .success-banner {
-        background: white;
-        text-align: center;
-        padding: 3rem 2rem;
-        border-radius: 12px;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        border: 2px solid #28a745;
-    }
-
-    .success-icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-    }
-
-    .success-banner h1 {
-        margin: 0 0 0.5rem 0;
-        color: #28a745;
-        font-size: 2.5rem;
-    }
-
-    .details-section, .trip-section, .payment-section, .info-section, .action-section, .support-section {
-        background: white;
-        padding: 2rem;
-        border-radius: 12px;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    h2 {
-        color: #8B4513;
-        border-bottom: 2px solid #8B4513;
-        padding-bottom: 1rem;
-        margin-top: 0;
-    }
-
-    .details-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.5rem;
-        margin-top: 1rem;
-    }
-
-    .detail-item {
-        background: #F5EFE8;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #8B4513;
-    }
-
-    .detail-item label {
-        display: block;
-        color: #666;
-        font-size: 0.9rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .confirm-number {
-        background: #FFD700;
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
-        font-size: 1.2rem;
-    }
-
-    .status-badge {
-        color: #28a745;
-    }
-
-    .trip-info {
-        display: flex;
-        gap: 2rem;
-        align-items: center;
-        background: #F5EFE8;
-        padding: 2rem;
-        border-radius: 8px;
-    }
-
-    .trip-image {
-        width: 200px;
-        height: 200px;
-        border-radius: 8px;
-        object-fit: cover;
-    }
-
-    .trip-details h3 {
-        margin-top: 0;
-        color: #8B4513;
-    }
-
-    .trip-details p {
-        margin: 0.5rem 0;
-    }
-
-    .payment-info {
-        margin-top: 1rem;
-        padding: 1.5rem;
-        background: #FFF8DC;
-        border-radius: 8px;
-        border: 2px solid #8B4513;
-    }
-
-    .payment-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.75rem 0;
-    }
-
-    .payment-row.total {
-        border-top: 2px solid #8B4513;
-        padding-top: 1rem;
-        margin-top: 1rem;
-        font-size: 1.2rem;
-    }
-
-    .info-boxes {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin-top: 1rem;
-    }
-
-    .info-box {
-        background: #F5EFE8;
-        padding: 1.5rem;
-        border-radius: 8px;
-        border-left: 4px solid #8B4513;
-    }
-
-    .info-box h4 {
-        margin-top: 0;
-        color: #8B4513;
-    }
-
-    .info-box ul {
-        margin: 0;
-        padding-left: 1.5rem;
-    }
-
-    .info-box li {
-        margin: 0.5rem 0;
-    }
-
-    .action-buttons {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-        margin-top: 1.5rem;
-    }
-
-    .btn-primary, .btn-secondary {
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.3s;
-    }
-
-    .btn-primary {
-        background: #8B4513;
-        color: white;
-    }
-
-    .btn-primary:hover {
-        background: #A0522D;
-    }
-
-    .btn-secondary {
-        background: white;
-        color: #8B4513;
-        border: 2px solid #8B4513;
-    }
-
-    .btn-secondary:hover {
-        background: #F5EFE8;
-    }
-
-    .support-section {
-        text-align: center;
-    }
-
-    .support-section p {
-        color: #666;
-    }
-
-    @@media (max-width: 768px) {
-        .trip-info {
-            flex-direction: column;
-            text-align: center;
-        }
-
-        .trip-image {
-            width: 100%;
-            max-width: 300px;
-        }
-
-        .details-grid, .info-boxes, .action-buttons {
-            grid-template-columns: 1fr;
-        }
-
-        .action-buttons {
-            flex-direction: column;
-        }
-    }
-</style>
