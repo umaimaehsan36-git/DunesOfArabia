@@ -1,0 +1,364 @@
+@page "/dashboard"
+@layout DunesOfArabia.Components.Layout.MainLayout
+@rendermode InteractiveServer
+
+@using DunesOfArabia.Models
+@inject IUserService UserService
+@inject IBookingService BookingService
+@inject IDestinationService DestinationService
+@inject IReviewService ReviewService
+@inject NavigationManager Nav
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
+<PageTitle>Dashboard – Dunes of Arabia</PageTitle>
+
+<div class="dashboard-page">
+
+    @if (!isAuthenticated)
+    {
+        <div class="not-authenticated">
+            <div class="auth-container">
+                <h2>🔐 Please Log In</h2>
+                <p>You need to log in to access your dashboard</p>
+                <a href="/Account/Login?returnUrl=/dashboard" class="btn-primary">
+                    Go to Login
+                </a>
+            </div>
+        </div>
+    }
+    else if (isLoading)
+    {
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading your dashboard...</p>
+        </div>
+    }
+    else
+    {
+        <div class="welcome-section">
+            <div class="welcome-content">
+                <h1>Welcome back, @(currentUserName)! 👋</h1>
+                <p>Here's what's happening with your adventures</p>
+            </div>
+            <div class="welcome-actions">
+                <a href="/planner" class="btn-accent">Plan a New Trip</a>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📍</div>
+                <div class="stat-content">
+                    <div class="stat-number">@savedDestinations.Count</div>
+                    <div class="stat-label">Saved Destinations</div>
+                </div>
+                @* FIX: was /saved-trips — SavedTrips.razor is @page "/favorites" *@
+                <a href="/favorites" class="stat-link">View All →</a>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">🎫</div>
+                <div class="stat-content">
+                    <div class="stat-number">@upcomingCount</div>
+                    <div class="stat-label">Upcoming Trips</div>
+                </div>
+                <a href="/my-bookings" class="stat-link">View All →</a>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-content">
+                    <div class="stat-number">SR @(totalSpent.ToString("N0"))</div>
+                    <div class="stat-label">Total Spent</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-content">
+                    <div class="stat-number">@reviewsWritten.Count</div>
+                    <div class="stat-label">Reviews Written</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="quick-actions-section">
+            <h2>Quick Actions</h2>
+            <div class="actions-grid">
+                <button @onclick='() => Nav.NavigateTo("/planner")' class="action-button">
+                    <span class="action-icon">🗺️</span>
+                    <span class="action-text">Plan a Trip</span>
+                </button>
+                <button @onclick='() => Nav.NavigateTo("/destinations")' class="action-button">
+                    <span class="action-icon">🏜️</span>
+                    <span class="action-text">Browse Destinations</span>
+                </button>
+                <button @onclick='() => Nav.NavigateTo("/my-bookings")' class="action-button">
+                    <span class="action-icon">📋</span>
+                    <span class="action-text">My Bookings</span>
+                </button>
+                <button @onclick='() => Nav.NavigateTo("/profile")' class="action-button">
+                    <span class="action-icon">👤</span>
+                    <span class="action-text">My Profile</span>
+                </button>
+            </div>
+        </div>
+
+        <section class="content-section">
+            <div class="section-header">
+                <h2>✈️ Upcoming Trips</h2>
+                <a href="/my-bookings" class="view-all">View All</a>
+            </div>
+
+            @if (upcomingBookings.Any())
+            {
+                <div class="trips-grid">
+                    @foreach (var booking in upcomingBookings.Take(3))
+                    {
+                        <div class="trip-card">
+                            <div class="trip-image">
+                                <img src="@GetBookingImage(booking)" alt="@GetBookingDestinationName(booking)" />
+                                <span class="days-left">@((booking.StartDate - DateTime.Today).Days) days</span>
+                            </div>
+                            <div class="trip-body">
+                                <h3>@GetBookingDestinationName(booking)</h3>
+                                <p class="trip-dates">📅 @(booking.StartDate.ToString("MMM dd")) - @(booking.EndDate.ToString("MMM dd, yyyy"))</p>
+                                <p class="trip-travelers">👥 @(GetTravelersCount(booking)) traveler@(GetTravelersCount(booking) > 1 ? "s" : "")</p>
+                                <div class="trip-actions">
+                                    <a href="/booking-confirmation/@booking.Id" class="btn-link-small">Details</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">🎒</div>
+                    <h3>No upcoming trips yet</h3>
+                    <p>Start planning your next adventure!</p>
+                    <a href="/planner" class="btn-primary">Plan a Trip</a>
+                </div>
+            }
+        </section>
+
+        <section class="content-section">
+            <div class="section-header">
+                <h2>❤️ Saved Destinations</h2>
+                @* FIX: was /saved-trips *@
+                <a href="/favorites" class="view-all">View All</a>
+            </div>
+
+            @if (savedDestinations.Any())
+            {
+                <div class="destinations-grid">
+                    @foreach (var destination in savedDestinations.Take(4))
+                    {
+                        @* FIX: was /destination/{id} — already correct here, just keeping it *@
+                        <div class="destination-card"
+                             @onclick='() => Nav.NavigateTo($"/destination/{destination.Id}")'>
+                            <img src="@destination.ImageUrl" alt="@destination.Name" class="dest-image" />
+                            <div class="dest-overlay">
+                                <h4>@destination.Name</h4>
+                                <p>@destination.Category</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">💭</div>
+                    <h3>No saved destinations yet</h3>
+                    <p>Explore and save your favorite places</p>
+                    <a href="/destinations" class="btn-primary">Browse Destinations</a>
+                </div>
+            }
+        </section>
+
+        <section class="content-section">
+            <div class="section-header">
+                <h2>📊 Recent Activity</h2>
+            </div>
+            @if (recentActivities.Any())
+            {
+                <div class="activity-feed">
+                    @foreach (var activity in recentActivities.Take(5))
+                    {
+                        <div class="activity-item">
+                            <span class="activity-icon">@GetActivityIcon(activity.Type)</span>
+                            <div class="activity-info">
+                                <strong>@activity.Title</strong>
+                                <small>@(activity.Timestamp.ToString("MMM dd, yyyy"))</small>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="empty-text">No recent activity yet</p>
+            }
+        </section>
+
+        <section class="content-section">
+            <div class="section-header">
+                <h2>✨ Recommended for You</h2>
+            </div>
+            @if (recommendedDestinations.Any())
+            {
+                <div class="recommendations-grid">
+                    @foreach (var destination in recommendedDestinations.Take(3))
+                    {
+                        <div class="rec-card">
+                            <img src="@destination.ImageUrl" alt="@destination.Name" class="rec-image" />
+                            <div class="rec-content">
+                                <h4>@destination.Name</h4>
+                                <p>@destination.Province</p>
+                                @* FIX: /destination/ not /destinations/ *@
+                                <a href="/destination/@destination.Id" class="btn-link">Explore →</a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    private string currentUserName = "Traveler";
+    private List<Booking> upcomingBookings = new();
+    private List<Destination> savedDestinations = new();
+    private List<Destination> recommendedDestinations = new();
+    private List<Review> reviewsWritten = new();
+    private List<ActivityLog> recentActivities = new();
+    private bool isAuthenticated = false;
+    private bool isLoading = true;
+    private decimal totalSpent = 0;
+    private int upcomingCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var token = await LocalStorage.GetItemAsync<string>("authToken");
+            isAuthenticated = !string.IsNullOrWhiteSpace(token);
+
+            if (!isAuthenticated)
+            {
+                isLoading = false;
+                return;
+            }
+
+            var bookings = await BookingService.GetAllAsync();
+            if (bookings != null)
+            {
+                upcomingBookings = bookings
+                    .Where(x => x.StartDate >= DateTime.Today)
+                    .OrderBy(x => x.StartDate)
+                    .ToList();
+                upcomingCount = upcomingBookings.Count;
+                totalSpent = upcomingBookings.Sum(x => x.TotalPrice);
+            }
+
+            var allDestinations = await DestinationService.GetAllAsync();
+            if (allDestinations != null)
+            {
+                savedDestinations = allDestinations.Take(4).ToList();
+                recommendedDestinations = allDestinations.Skip(2).Take(3).ToList();
+            }
+
+            var reviews = await ReviewService.GetAllAsync();
+            if (reviews != null)
+                reviewsWritten = reviews.Take(5).ToList();
+
+            recentActivities = new List<ActivityLog>
+            {
+                new ActivityLog { Type = "booking",  Title = "Booked a desert safari",        Timestamp = DateTime.Now.AddDays(-1) },
+                new ActivityLog { Type = "favorite", Title = "Saved Riyadh Edge destination", Timestamp = DateTime.Now.AddDays(-3) },
+                new ActivityLog { Type = "review",   Title = "Left a 5-star review",          Timestamp = DateTime.Now.AddDays(-5) }
+            };
+
+            currentUserName = "Traveler";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+
+        isLoading = false;
+    }
+
+    private string GetBookingDestinationName(Booking booking) => $"Trip #{booking.Id}";
+    private string GetBookingImage(Booking booking) =>
+        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop";
+    private int GetTravelersCount(Booking booking) => 1;
+
+    private string GetActivityIcon(string type) => type switch
+    {
+        "booking"  => "🎫",
+        "review"   => "⭐",
+        "favorite" => "❤️",
+        "trip"     => "✈️",
+        "activity" => "🎯",
+        _          => "📌"
+    };
+
+    private class ActivityLog
+    {
+        public string Type      { get; set; } = string.Empty;
+        public string Title     { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; }
+    }
+}
+
+<style>
+    .dashboard-page { background: linear-gradient(135deg, #F5EFE8 0%, #E8DCC8 100%); min-height: 100vh; padding: 2rem 1rem; }
+    .not-authenticated, .loading-state { display: flex; align-items: center; justify-content: center; min-height: 400px; }
+    .auth-container { background: white; padding: 3rem 2rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .auth-container h2 { color: #8B4513; margin-top: 0; }
+    .spinner { border: 4px solid #DDD; border-top: 4px solid #8B4513; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+    @@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .welcome-section, .quick-actions-section, .content-section { background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; max-width: 1400px; margin-left: auto; margin-right: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .welcome-section { display: flex; justify-content: space-between; align-items: center; }
+    .welcome-content h1 { color: #8B4513; margin: 0 0 .5rem 0; }
+    .btn-primary, .btn-accent { padding: .75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600; transition: .3s; display: inline-block; }
+    .btn-primary { background: #8B4513; color: white; }
+    .btn-accent  { background: #FFD700; color: black; }
+    .stats-grid, .actions-grid, .trips-grid, .destinations-grid, .recommendations-grid { display: grid; gap: 1.5rem; max-width: 1400px; margin: auto; }
+    .stats-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 2rem; }
+    .actions-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .trips-grid, .recommendations-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .destinations-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .stat-card, .trip-card, .rec-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: .3s; }
+    .stat-card:hover, .trip-card:hover, .rec-card:hover { transform: translateY(-5px); }
+    .stat-card { padding: 1.5rem; text-align: center; }
+    .stat-icon { font-size: 2.5rem; }
+    .stat-number { font-size: 2rem; font-weight: bold; color: #8B4513; }
+    .stat-label  { color: #666; }
+    .trip-image, .rec-image { width: 100%; height: 180px; object-fit: cover; }
+    .trip-body, .rec-content { padding: 1rem; }
+    .trip-body h3, .rec-content h4 { color: #8B4513; margin-top: 0; }
+    .days-left { position: absolute; top: 10px; right: 10px; background: #FFD700; padding: .4rem .8rem; border-radius: 20px; font-size: .85rem; font-weight: 600; }
+    .trip-image { position: relative; }
+    .trip-actions { margin-top: 1rem; }
+    .btn-link-small, .btn-link { color: #8B4513; text-decoration: none; font-weight: 600; }
+    .destination-card { position: relative; height: 180px; overflow: hidden; border-radius: 10px; cursor: pointer; }
+    .destination-card img { width: 100%; height: 100%; object-fit: cover; }
+    .dest-image { width: 100%; height: 100%; object-fit: cover; }
+    .dest-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 1rem; color: white; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); }
+    .activity-feed { display: flex; flex-direction: column; gap: 1rem; }
+    .activity-item { display: flex; align-items: center; gap: 1rem; background: #F5EFE8; padding: 1rem; border-radius: 8px; border-left: 4px solid #8B4513; }
+    .activity-icon { font-size: 1.5rem; }
+    .empty-state, .empty-text { text-align: center; padding: 2rem; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .section-header h2 { margin: 0; color: #8B4513; }
+    .view-all, .stat-link { color: #8B4513; text-decoration: none; font-weight: 600; }
+    .action-button { border: 2px solid #8B4513; background: #F5EFE8; padding: 1.5rem; border-radius: 10px; cursor: pointer; transition: .3s; font-weight: 600; }
+    .action-button:hover { background: #8B4513; color: white; }
+    .action-icon { font-size: 2rem; display: block; margin-bottom: .5rem; }
+    @@media (max-width: 768px) { .welcome-section { flex-direction: column; gap: 1rem; text-align: center; } .dashboard-page { padding: 1rem; } }
+</style>
