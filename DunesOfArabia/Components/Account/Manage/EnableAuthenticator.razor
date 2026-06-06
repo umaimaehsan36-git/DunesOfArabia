@@ -1,7 +1,25 @@
-﻿@page "/Account/Manage/EnableAuthenticator"
+@page "/Account/Manage/EnableAuthenticator"
+
+@* ================================================================
+   EnableAuthenticator.razor
+   Path: Components/Account/Pages/Manage/EnableAuthenticator.razor
+
+   WHY THIS FILE IS NEEDED:
+   2FA is not "missing" from the login flow — it only triggers when a
+   user has already enabled it on their account. This page is where
+   users set up 2FA in their account management area.
+
+   FLOW:
+   1. User goes to /Account/Manage/EnableAuthenticator
+   2. They scan the QR code with Google Authenticator / Authy
+   3. They enter the 6-digit code to verify
+   4. 2FA is enabled — next login will route through LoginWith2fa.razor
+
+   NOTE: This page needs a QR code library. It uses the
+   qrcode.js CDN (loaded inline) to render the QR.
+   ================================================================ *@
 
 @using System.ComponentModel.DataAnnotations
-@using System.Globalization
 @using System.Text
 @using System.Text.Encodings.Web
 @using Microsoft.AspNetCore.Identity
@@ -9,70 +27,143 @@
 
 @inject UserManager<ApplicationUser> UserManager
 @inject UrlEncoder UrlEncoder
-@inject IdentityRedirectManager RedirectManager
+@inject NavigationManager NavigationManager
 @inject ILogger<EnableAuthenticator> Logger
 
-<PageTitle>Configure authenticator app</PageTitle>
+<PageTitle>Set Up Two-Factor Auth – Dunes Of Arabia</PageTitle>
 
-@if (recoveryCodes is not null)
-{
-    <ShowRecoveryCodes RecoveryCodes="recoveryCodes.ToArray()" StatusMessage="@message" />
-}
-else
-{
-    <StatusMessage Message="@message" />
-    <h3>Configure authenticator app</h3>
-    <div>
-        <p>To use an authenticator app go through the following steps:</p>
-        <ol class="list">
-            <li>
-                <p>
-                    Download a two-factor authenticator app like Microsoft Authenticator for
-                    <a href="https://go.microsoft.com/fwlink/?Linkid=825072">Android</a> and
-                    <a href="https://go.microsoft.com/fwlink/?Linkid=825073">iOS</a> or
-                    Google Authenticator for
-                    <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&amp;hl=en">Android</a> and
-                    <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8">iOS</a>.
-                </p>
-            </li>
-            <li>
-                <p>Scan the QR Code or enter this key <kbd>@sharedKey</kbd> into your two factor authenticator app. Spaces and casing do not matter.</p>
-                <div class="alert alert-info">Learn how to <a href="https://go.microsoft.com/fwlink/?Linkid=852423">enable QR code generation</a>.</div>
-                <div></div>
-                <div data-url="@authenticatorUri"></div>
-            </li>
-            <li>
-                <p>
-                    Once you have scanned the QR code or input the key above, your two factor authentication app will provide you
-                    with a unique code. Enter the code in the confirmation box below.
-                </p>
-                <div class="row">
-                    <div class="col-xl-6">
-                        <EditForm Model="Input" FormName="send-code" OnValidSubmit="OnValidSubmitAsync" method="post">
-                            <DataAnnotationsValidator />
-                            <div class="form-floating mb-3">
-                                <InputText @bind-Value="Input.Code" id="Input.Code" class="form-control" autocomplete="off" placeholder="Enter the code" />
-                                <label for="Input.Code" class="control-label form-label">Verification Code</label>
-                                <ValidationMessage For="() => Input.Code" class="text-danger" />
-                            </div>
-                            <button type="submit" class="w-100 btn btn-lg btn-primary">Verify</button>
-                            <ValidationSummary class="text-danger" role="alert" />
-                        </EditForm>
-                    </div>
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    body { background:radial-gradient(ellipse at 60% 40%,#E8D9C5 0%,#DFD0B8 50%,#D4C4A8 100%); }
+    .page { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; font-family:'Inter','Segoe UI',sans-serif; }
+    .brand { text-align:center; margin-bottom:2rem; }
+    .brand h1 { font-family:'Playfair Display',Georgia,serif; font-size:2.4rem; font-weight:700; color:#7B2D10; letter-spacing:3px; text-transform:uppercase; margin-bottom:.4rem; }
+    .brand p { font-size:1rem; color:#8B6650; }
+    .card { background:#FFF; border-radius:16px; padding:2.5rem; width:100%; max-width:600px; box-shadow:0 4px 40px rgba(100,50,20,.10); }
+    .card-icon { text-align:center; font-size:2.5rem; margin-bottom:1rem; }
+    .card-title { font-family:'Playfair Display',Georgia,serif; font-size:1.75rem; font-weight:600; color:#1C0F07; text-align:center; margin-bottom:.75rem; }
+    .card-subtitle { font-size:.9rem; color:#8B6650; text-align:center; line-height:1.6; margin-bottom:2rem; }
+    .step { margin-bottom:1.75rem; }
+    .step-head { display:flex; align-items:center; gap:12px; margin-bottom:.75rem; }
+    .step-num { width:28px; height:28px; background:#7B2D10; color:#FFF; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:700; flex-shrink:0; }
+    .step-title { font-size:1rem; font-weight:600; color:#1C0F07; }
+    .step-body { font-size:.875rem; color:#5A3E30; line-height:1.7; padding-left:40px; }
+    .qr-box { display:flex; justify-content:center; margin:1rem 0 1rem 40px; }
+    #qrcode canvas, #qrcode img { border:8px solid #FFF; border-radius:8px; box-shadow:0 2px 12px rgba(100,50,20,.15); }
+    .secret-key { background:#FBF7F2; border:1px solid #E5D8C8; border-radius:8px; padding:.75rem 1rem; font-family:'Courier New',monospace; font-size:.95rem; color:#5C2009; letter-spacing:2px; word-break:break-all; margin:0 0 1rem 40px; }
+    .alert-error { background:#FEF2F2; color:#991B1B; border:1px solid #FCA5A5; border-radius:8px; padding:.85rem 1rem; margin-bottom:1.5rem; font-size:.875rem; }
+    .alert-success { background:#F0FDF4; color:#166534; border:1px solid #BBF7D0; border-radius:8px; padding:.85rem 1rem; margin-bottom:1.5rem; font-size:.875rem; }
+    .form-group { margin-bottom:1.5rem; padding-left:40px; }
+    .form-label { display:block; font-size:.95rem; font-weight:600; color:#1C0F07; margin-bottom:.6rem; }
+    .form-input { width:100%; max-width:220px; padding:13px 16px; border:1.5px solid #E5D8C8; border-radius:8px; font-size:1.3rem; font-family:'Courier New',monospace; font-weight:700; color:#1C0F07; background:#FDFAF7; text-align:center; letter-spacing:4px; transition:border-color .25s,box-shadow .25s; appearance:none; }
+    .form-input:focus { outline:none; border-color:#8B5A3C; background:#FFF; box-shadow:0 0 0 3px rgba(139,90,60,.12); }
+    .form-input::placeholder { color:#BBA898; font-weight:300; letter-spacing:2px; }
+    .validation-error { color:#DC2626; font-size:.78rem; margin-top:.4rem; display:block; }
+    .btn-primary { padding:14px 32px; background:#7B2D10; color:#FFF; border:none; border-radius:8px; font-size:1rem; font-weight:600; font-family:inherit; cursor:pointer; transition:background .25s,transform .2s; margin-left:40px; }
+    .btn-primary:hover { background:#5C2009; transform:translateY(-1px); }
+    .back-link { text-align:center; margin-top:1.5rem; font-size:.875rem; color:#8B6650; }
+    .back-link a { color:#7B2D10; font-weight:600; text-decoration:none; }
+    .back-link a:hover { text-decoration:underline; }
+    @@media (max-width:600px) { .card { padding:2rem 1.5rem; } .brand h1 { font-size:2rem; } .step-body,.qr-box,.secret-key,.form-group,.btn-primary { padding-left:0; margin-left:0; } }
+</style>
+
+<div class="page">
+    <div class="brand"><h1>Saudi Heritage</h1><p>Account Security Settings</p></div>
+
+    <div class="card">
+        <div class="card-icon">🔐</div>
+        <h2 class="card-title">Enable Two-Factor Authentication</h2>
+        <p class="card-subtitle">
+            Add an extra layer of security. Once enabled, you'll need your phone to log in.
+        </p>
+
+        @if (!string.IsNullOrEmpty(statusMessage))
+        {
+            <div class="@(isSuccess ? "alert-success" : "alert-error")">
+                @(isSuccess ? "✅" : "⚠️") @statusMessage
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(sharedKey))
+        {
+            <!-- STEP 1 -->
+            <div class="step">
+                <div class="step-head">
+                    <div class="step-num">1</div>
+                    <div class="step-title">Download an authenticator app</div>
                 </div>
-            </li>
-        </ol>
+                <div class="step-body">
+                    Download <strong>Google Authenticator</strong> or <strong>Microsoft Authenticator</strong>
+                    from your app store, then open it.
+                </div>
+            </div>
+
+            <!-- STEP 2 -->
+            <div class="step">
+                <div class="step-head">
+                    <div class="step-num">2</div>
+                    <div class="step-title">Scan the QR code</div>
+                </div>
+                <div class="step-body">
+                    In the app, tap <strong>Add account → Scan QR code</strong> and point your camera here:
+                </div>
+                <div class="qr-box">
+                    <div id="qrcode"></div>
+                </div>
+                <div class="step-body" style="margin-top:.5rem;">
+                    Can't scan? Enter this key manually in your app:
+                </div>
+                <div class="secret-key">@sharedKey</div>
+            </div>
+
+            <!-- STEP 3 -->
+            <div class="step">
+                <div class="step-head">
+                    <div class="step-num">3</div>
+                    <div class="step-title">Enter the 6-digit code</div>
+                </div>
+                <div class="step-body">
+                    Once the app shows a code for this account, enter it below to verify and activate 2FA.
+                </div>
+            </div>
+
+            <EditForm Model="Input" FormName="enable-authenticator" OnValidSubmit="OnValidSubmitAsync" method="post">
+                <DataAnnotationsValidator />
+                <div class="form-group">
+                    <label class="form-label" for="Input.Code">Verification Code</label>
+                    <InputText @bind-Value="Input.Code" id="Input.Code" class="form-input"
+                               autocomplete="one-time-code" inputmode="numeric" maxlength="7" placeholder="000000" />
+                    <ValidationMessage For="() => Input.Code" class="validation-error" />
+                </div>
+                <button type="submit" class="btn-primary">Verify & Enable 2FA</button>
+            </EditForm>
+        }
+
+        <div class="back-link">
+            <a href="/Account/Manage">← Back to Account Settings</a>
+        </div>
     </div>
-}
+</div>
+
+<!-- QR code renderer (loaded from CDN) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+    (function tryRender() {
+        var uri = "@authenticatorUri";
+        if (!uri) return;
+        if (typeof QRCode === 'undefined') { setTimeout(tryRender, 100); return; }
+        var el = document.getElementById('qrcode');
+        if (!el) return;
+        new QRCode(el, { text: uri, width: 160, height: 160, colorDark: "#1C0F07", colorLight: "#ffffff" });
+    })();
+</script>
 
 @code {
-    private const string AuthenticatorUriFormat = "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6";
-
-    private string? message;
-    private ApplicationUser? user;
     private string? sharedKey;
     private string? authenticatorUri;
-    private IEnumerable<string>? recoveryCodes;
+    private string? statusMessage;
+    private bool isSuccess;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -84,69 +175,51 @@ else
     {
         Input ??= new();
 
-        user = await UserManager.GetUserAsync(HttpContext.User);
-        if (user is null)
-        {
-            RedirectManager.RedirectToInvalidUser(UserManager, HttpContext);
-            return;
-        }
+        var user = await GetCurrentUserAsync();
+        if (user == null) return;
 
         await LoadSharedKeyAndQrCodeUriAsync(user);
     }
 
     private async Task OnValidSubmitAsync()
     {
-        if (user is null)
-        {
-            RedirectManager.RedirectToInvalidUser(UserManager, HttpContext);
-            return;
-        }
+        var user = await GetCurrentUserAsync();
+        if (user == null) return;
 
-        // Strip spaces and hyphens
-        var verificationCode = Input.Code.Replace(" ", string.Empty).Replace("-", string.Empty);
-
+        var verificationCode = Input.Code.Replace(" ", "").Replace("-", "");
         var is2faTokenValid = await UserManager.VerifyTwoFactorTokenAsync(
             user, UserManager.Options.Tokens.AuthenticatorTokenProvider, verificationCode);
 
         if (!is2faTokenValid)
         {
-            message = "Error: Verification code is invalid.";
+            statusMessage = "Invalid verification code. Please check your authenticator app and try again.";
+            isSuccess = false;
+            await LoadSharedKeyAndQrCodeUriAsync(user);
             return;
         }
 
         await UserManager.SetTwoFactorEnabledAsync(user, true);
-        var userId = await UserManager.GetUserIdAsync(user);
-        Logger.LogInformation("User with ID '{UserId}' has enabled 2FA with an authenticator app.", userId);
+        Logger.LogInformation("User with ID '{UserId}' has enabled 2FA.", await UserManager.GetUserIdAsync(user));
 
-        message = "Your authenticator app has been verified.";
-
-        if (await UserManager.CountRecoveryCodesAsync(user) == 0)
-        {
-            recoveryCodes = await UserManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
-        }
-        else
-        {
-            RedirectManager.RedirectToWithStatus("Account/Manage/TwoFactorAuthentication", message, HttpContext);
-        }
+        statusMessage = "Two-factor authentication has been enabled on your account. You will now need your authenticator app at login.";
+        isSuccess = true;
     }
 
-    private async ValueTask LoadSharedKeyAndQrCodeUriAsync(ApplicationUser user)
+    private async Task LoadSharedKeyAndQrCodeUriAsync(ApplicationUser user)
     {
-        // Load the authenticator key & QR code URI to display on the form
         var unformattedKey = await UserManager.GetAuthenticatorKeyAsync(user);
         if (string.IsNullOrEmpty(unformattedKey))
         {
             await UserManager.ResetAuthenticatorKeyAsync(user);
             unformattedKey = await UserManager.GetAuthenticatorKeyAsync(user);
         }
-
         sharedKey = FormatKey(unformattedKey!);
 
-        var email = await UserManager.GetEmailAsync(user);
-        authenticatorUri = GenerateQrCodeUri(email!, unformattedKey!);
+        var email = await UserManager.GetEmailAsync(user) ?? "";
+        authenticatorUri = GenerateQrCodeUri(email, unformattedKey!);
     }
 
-    private string FormatKey(string unformattedKey)
+    private static string FormatKey(string unformattedKey)
     {
         var result = new StringBuilder();
         int currentPosition = 0;
@@ -156,27 +229,24 @@ else
             currentPosition += 4;
         }
         if (currentPosition < unformattedKey.Length)
-        {
             result.Append(unformattedKey.AsSpan(currentPosition));
-        }
-
         return result.ToString().ToLowerInvariant();
     }
 
-    private string GenerateQrCodeUri(string email, string unformattedKey)
+    private string GenerateQrCodeUri(string email, string unformattedKey) =>
+        $"otpauth://totp/{UrlEncoder.Encode("DunesOfArabia")}:{UrlEncoder.Encode(email)}?secret={unformattedKey}&issuer={UrlEncoder.Encode("DunesOfArabia")}&digits=6";
+
+    private async Task<ApplicationUser?> GetCurrentUserAsync()
     {
-        return string.Format(
-            CultureInfo.InvariantCulture,
-            AuthenticatorUriFormat,
-            UrlEncoder.Encode("Microsoft.AspNetCore.Identity.UI"),
-            UrlEncoder.Encode(email),
-            unformattedKey);
+        var userId = UserManager.GetUserId(HttpContext.User);
+        if (userId == null) { NavigationManager.NavigateTo("/Account/Login", forceLoad: true); return null; }
+        return await UserManager.FindByIdAsync(userId);
     }
 
     private sealed class InputModel
     {
-        [Required]
-        [StringLength(7, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [Required(ErrorMessage = "Verification code is required")]
+        [StringLength(7, MinimumLength = 6, ErrorMessage = "Code must be 6 digits")]
         [DataType(DataType.Text)]
         [Display(Name = "Verification Code")]
         public string Code { get; set; } = "";

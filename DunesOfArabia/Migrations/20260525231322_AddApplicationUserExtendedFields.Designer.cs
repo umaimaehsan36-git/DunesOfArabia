@@ -4,6 +4,7 @@ using DunesOfArabia.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,13 +12,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DunesOfArabia.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260525231322_AddApplicationUserExtendedFields")]
+    partial class AddApplicationUserExtendedFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.7")
+                .HasAnnotation("ProductVersion", "8.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -29,10 +32,6 @@ namespace DunesOfArabia.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.PrimitiveCollection<string>("AvailableTimes")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CancellationPolicy")
                         .IsRequired()
@@ -49,6 +48,9 @@ namespace DunesOfArabia.Migrations
                     b.Property<int>("DestinationId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("DestinationId1")
+                        .HasColumnType("int");
+
                     b.Property<string>("DifficultyLevel")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -60,7 +62,7 @@ namespace DunesOfArabia.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.PrimitiveCollection<string>("IncludedServices")
+                    b.Property<string>("IncludedServices")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -96,13 +98,14 @@ namespace DunesOfArabia.Migrations
 
                     b.HasIndex("DestinationId");
 
+                    b.HasIndex("DestinationId1");
+
                     b.ToTable("Activities");
 
                     b.HasData(
                         new
                         {
                             Id = 1,
-                            AvailableTimes = "[]",
                             CancellationPolicy = "",
                             Category = "Adventure",
                             Description = "Experience the best of AlUla with a combination of archaeological tours, desert adventures, and cultural immersion.",
@@ -110,8 +113,8 @@ namespace DunesOfArabia.Migrations
                             DifficultyLevel = "",
                             DurationHours = 8m,
                             ImageUrl = "https://images.unsplash.com/photo-1616236197457-53e96373d0b0?w=900",
-                            IncludedServices = "[]",
-                            MaxParticipants = 0,
+                            IncludedServices = "",
+                            MaxParticipants = 20,
                             MinAge = 0,
                             Name = "AlUla Heritage & Adventure Combo",
                             OperatorEmail = "",
@@ -123,7 +126,6 @@ namespace DunesOfArabia.Migrations
                         new
                         {
                             Id = 2,
-                            AvailableTimes = "[]",
                             CancellationPolicy = "",
                             Category = "Adventure",
                             Description = "Thrilling off-road desert adventure through vast golden dunes with expert guides and traditional refreshments.",
@@ -131,8 +133,8 @@ namespace DunesOfArabia.Migrations
                             DifficultyLevel = "",
                             DurationHours = 5m,
                             ImageUrl = "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=700",
-                            IncludedServices = "[]",
-                            MaxParticipants = 0,
+                            IncludedServices = "",
+                            MaxParticipants = 20,
                             MinAge = 0,
                             Name = "Desert Safari",
                             OperatorEmail = "",
@@ -144,7 +146,6 @@ namespace DunesOfArabia.Migrations
                         new
                         {
                             Id = 3,
-                            AvailableTimes = "[]",
                             CancellationPolicy = "",
                             Category = "Adventure",
                             Description = "Scale spectacular sandstone formations and canyon walls with certified climbing instructors.",
@@ -152,8 +153,8 @@ namespace DunesOfArabia.Migrations
                             DifficultyLevel = "",
                             DurationHours = 3m,
                             ImageUrl = "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=700",
-                            IncludedServices = "[]",
-                            MaxParticipants = 0,
+                            IncludedServices = "",
+                            MaxParticipants = 20,
                             MinAge = 0,
                             Name = "Rock Climbing",
                             OperatorEmail = "",
@@ -165,7 +166,6 @@ namespace DunesOfArabia.Migrations
                         new
                         {
                             Id = 4,
-                            AvailableTimes = "[]",
                             CancellationPolicy = "",
                             Category = "Adventure",
                             Description = "Heart-pumping 4x4 ride across towering dunes in the vast Empty Quarter desert.",
@@ -173,8 +173,8 @@ namespace DunesOfArabia.Migrations
                             DifficultyLevel = "",
                             DurationHours = 2m,
                             ImageUrl = "https://images.unsplash.com/photo-1542401886-65d6c61db217?w=700",
-                            IncludedServices = "[]",
-                            MaxParticipants = 0,
+                            IncludedServices = "",
+                            MaxParticipants = 20,
                             MinAge = 0,
                             Name = "Dune Bashing",
                             OperatorEmail = "",
@@ -186,7 +186,6 @@ namespace DunesOfArabia.Migrations
                         new
                         {
                             Id = 5,
-                            AvailableTimes = "[]",
                             CancellationPolicy = "",
                             Category = "Cultural",
                             Description = "Guided walk through Diriyah's ancient mud-brick At-Turaif district with a local historian.",
@@ -194,8 +193,8 @@ namespace DunesOfArabia.Migrations
                             DifficultyLevel = "",
                             DurationHours = 3m,
                             ImageUrl = "https://images.unsplash.com/photo-1539667284076-a4d98d9ac42b?w=700",
-                            IncludedServices = "[]",
-                            MaxParticipants = 0,
+                            IncludedServices = "",
+                            MaxParticipants = 20,
                             MinAge = 0,
                             Name = "Heritage Walking Tour",
                             OperatorEmail = "",
@@ -207,7 +206,6 @@ namespace DunesOfArabia.Migrations
                         new
                         {
                             Id = 6,
-                            AvailableTimes = "[]",
                             CancellationPolicy = "",
                             Category = "Cultural",
                             Description = "Explore labyrinthine souqs, taste local spices, and shop handcrafted Saudi treasures.",
@@ -215,8 +213,8 @@ namespace DunesOfArabia.Migrations
                             DifficultyLevel = "",
                             DurationHours = 2m,
                             ImageUrl = "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=700",
-                            IncludedServices = "[]",
-                            MaxParticipants = 0,
+                            IncludedServices = "",
+                            MaxParticipants = 20,
                             MinAge = 0,
                             Name = "Traditional Souq Experience",
                             OperatorEmail = "",
@@ -228,7 +226,6 @@ namespace DunesOfArabia.Migrations
                         new
                         {
                             Id = 7,
-                            AvailableTimes = "[]",
                             CancellationPolicy = "",
                             Category = "Cultural",
                             Description = "Walk among Nabataean tombs and ancient inscriptions at AlUla's UNESCO World Heritage sites.",
@@ -236,8 +233,8 @@ namespace DunesOfArabia.Migrations
                             DifficultyLevel = "",
                             DurationHours = 4m,
                             ImageUrl = "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=700",
-                            IncludedServices = "[]",
-                            MaxParticipants = 0,
+                            IncludedServices = "",
+                            MaxParticipants = 20,
                             MinAge = 0,
                             Name = "Archaeological Site Visit",
                             OperatorEmail = "",
@@ -249,7 +246,6 @@ namespace DunesOfArabia.Migrations
                         new
                         {
                             Id = 8,
-                            AvailableTimes = "[]",
                             CancellationPolicy = "",
                             Category = "Water",
                             Description = "Dive into pristine Red Sea coral reefs teeming with vibrant marine life and stunning underwater formations.",
@@ -257,8 +253,8 @@ namespace DunesOfArabia.Migrations
                             DifficultyLevel = "",
                             DurationHours = 3m,
                             ImageUrl = "https://images.unsplash.com/photo-1564769611905-cd27ee64e59b?w=700",
-                            IncludedServices = "[]",
-                            MaxParticipants = 0,
+                            IncludedServices = "",
+                            MaxParticipants = 20,
                             MinAge = 0,
                             Name = "Scuba Diving",
                             OperatorEmail = "",
@@ -270,7 +266,6 @@ namespace DunesOfArabia.Migrations
                         new
                         {
                             Id = 9,
-                            AvailableTimes = "[]",
                             CancellationPolicy = "",
                             Category = "Water",
                             Description = "Snorkel through crystal-clear waters above spectacular coral gardens and tropical fish.",
@@ -278,8 +273,8 @@ namespace DunesOfArabia.Migrations
                             DifficultyLevel = "",
                             DurationHours = 3m,
                             ImageUrl = "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=700",
-                            IncludedServices = "[]",
-                            MaxParticipants = 0,
+                            IncludedServices = "",
+                            MaxParticipants = 20,
                             MinAge = 0,
                             Name = "Snorkeling Adventure",
                             OperatorEmail = "",
@@ -291,7 +286,6 @@ namespace DunesOfArabia.Migrations
                         new
                         {
                             Id = 10,
-                            AvailableTimes = "[]",
                             CancellationPolicy = "",
                             Category = "Desert",
                             Description = "Ride through golden sands atop a camel as the desert sun paints the dunes a brilliant crimson.",
@@ -299,8 +293,8 @@ namespace DunesOfArabia.Migrations
                             DifficultyLevel = "",
                             DurationHours = 2m,
                             ImageUrl = "https://images.unsplash.com/photo-1549880338-65ddcdfd017b?w=700",
-                            IncludedServices = "[]",
-                            MaxParticipants = 0,
+                            IncludedServices = "",
+                            MaxParticipants = 20,
                             MinAge = 0,
                             Name = "Camel Trekking",
                             OperatorEmail = "",
@@ -312,7 +306,6 @@ namespace DunesOfArabia.Migrations
                         new
                         {
                             Id = 11,
-                            AvailableTimes = "[]",
                             CancellationPolicy = "",
                             Category = "Desert",
                             Description = "Witness a breathtaking canopy of stars far from city lights, deep in the Arabian desert.",
@@ -320,8 +313,8 @@ namespace DunesOfArabia.Migrations
                             DifficultyLevel = "",
                             DurationHours = 2m,
                             ImageUrl = "https://images.unsplash.com/photo-1446941303997-2843d7b4d20f?w=700",
-                            IncludedServices = "[]",
-                            MaxParticipants = 0,
+                            IncludedServices = "",
+                            MaxParticipants = 20,
                             MinAge = 0,
                             Name = "Stargazing Experience",
                             OperatorEmail = "",
@@ -333,7 +326,6 @@ namespace DunesOfArabia.Migrations
                         new
                         {
                             Id = 12,
-                            AvailableTimes = "[]",
                             CancellationPolicy = "",
                             Category = "Desert",
                             Description = "Spend an evening in a traditional Bedouin camp with dinner, cultural music, and desert tales.",
@@ -341,8 +333,8 @@ namespace DunesOfArabia.Migrations
                             DifficultyLevel = "",
                             DurationHours = 8m,
                             ImageUrl = "https://images.unsplash.com/photo-1519671282429-b44b0de7773e?w=700",
-                            IncludedServices = "[]",
-                            MaxParticipants = 0,
+                            IncludedServices = "",
+                            MaxParticipants = 20,
                             MinAge = 0,
                             Name = "Bedouin Camp Experience",
                             OperatorEmail = "",
@@ -361,9 +353,18 @@ namespace DunesOfArabia.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
+                    b.Property<string>("AvatarUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -372,8 +373,17 @@ namespace DunesOfArabia.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("FirstName")
+                        .HasMaxLength(75)
+                        .HasColumnType("nvarchar(75)");
+
                     b.Property<string>("FullName")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("LastName")
+                        .HasMaxLength(75)
+                        .HasColumnType("nvarchar(75)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -429,10 +439,6 @@ namespace DunesOfArabia.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("City")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("ConfirmationNumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -446,40 +452,13 @@ namespace DunesOfArabia.Migrations
                     b.Property<int?>("DestinationId1")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("DiscountAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("NumberOfTravelers")
                         .HasColumnType("int");
 
                     b.Property<string>("PaymentMethod")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Phone")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PostalCode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Province")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -560,8 +539,16 @@ namespace DunesOfArabia.Migrations
                     b.Property<string>("AdminResponse")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Message")
                         .IsRequired()
@@ -609,6 +596,10 @@ namespace DunesOfArabia.Migrations
                     b.Property<int>("ItineraryId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ItineraryId");
@@ -639,6 +630,9 @@ namespace DunesOfArabia.Migrations
                     b.Property<decimal>("Cost")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CreatedDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
@@ -653,6 +647,10 @@ namespace DunesOfArabia.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ImageGallery")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageGalleryJson")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -674,8 +672,6 @@ namespace DunesOfArabia.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-<<<<<<< Updated upstream
-=======
                     b.Property<double>("Rating")
                         .HasColumnType("float");
 
@@ -683,7 +679,6 @@ namespace DunesOfArabia.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
->>>>>>> Stashed changes
                     b.Property<string>("VisaInfo")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -696,25 +691,16 @@ namespace DunesOfArabia.Migrations
                         new
                         {
                             Id = 1,
-<<<<<<< Updated upstream
-                            Category = "Historical",
-                            Climate = "Hot, Dry",
-                            Cost = 500m,
-                            Description = "Ancient city with Nabatean ruins",
-                            ImageUrl = "alula.jpg",
-                            Latitude = 26.609999999999999,
-                            Longitude = 37.920000000000002,
-                            Name = "AlUla",
-                            Province = "Medina",
-=======
                             BestSeason = "November to February",
                             Category = "Urban",
                             Climate = "Hot, Arid",
                             Cost = 800m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "The modern capital blending innovation with rich cultural heritage and historic landmarks.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1586724237569-f3d0c1dee8c6?w=800",
                             Latitude = 24.6877,
                             Longitude = 46.721899999999998,
@@ -722,7 +708,6 @@ namespace DunesOfArabia.Migrations
                             Province = "Central Region",
                             Rating = 4.7999999999999998,
                             Temperature = "20°C – 45°C",
->>>>>>> Stashed changes
                             VisaInfo = "Tourist Visa Available"
                         },
                         new
@@ -732,10 +717,12 @@ namespace DunesOfArabia.Migrations
                             Category = "Coastal",
                             Climate = "Hot, Humid",
                             Cost = 700m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Historic port city with beautiful coastline, vibrant culture, and world-class diving.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1539667284076-a4d98d9ac42b?w=800",
                             Latitude = 21.485800000000001,
                             Longitude = 39.192500000000003,
@@ -752,10 +739,12 @@ namespace DunesOfArabia.Migrations
                             Category = "Historical",
                             Climate = "Hot, Dry",
                             Cost = 1200m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ancient rock formations and UNESCO World Heritage sites in a stunning desert landscape.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1616236197457-53e96373d0b0?w=800",
                             Latitude = 26.609999999999999,
                             Longitude = 37.920000000000002,
@@ -772,10 +761,12 @@ namespace DunesOfArabia.Migrations
                             Category = "Historical",
                             Climate = "Hot, Arid",
                             Cost = 500m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "The birthplace of the Kingdom with beautifully preserved mud-brick architecture.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800",
                             Latitude = 24.734400000000001,
                             Longitude = 46.575400000000002,
@@ -792,10 +783,12 @@ namespace DunesOfArabia.Migrations
                             Category = "Historical",
                             Climate = "Hot, Dry",
                             Cost = 950m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Saudi Arabia's first UNESCO World Heritage Site with breathtaking Nabataean tombs carved into sandstone.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=800",
                             Latitude = 26.791399999999999,
                             Longitude = 37.9529,
@@ -812,10 +805,12 @@ namespace DunesOfArabia.Migrations
                             Category = "Historical",
                             Climate = "Hot, Dry",
                             Cost = 600m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "A labyrinth of mud-brick houses dating back 2,000 years, abandoned and eerily preserved in the desert.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1526392060635-9d6019884377?w=800",
                             Latitude = 26.587,
                             Longitude = 37.916800000000002,
@@ -832,10 +827,12 @@ namespace DunesOfArabia.Migrations
                             Category = "Desert",
                             Climate = "Extremely Hot, Arid",
                             Cost = 1100m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "The world's largest continuous sand desert offering unparalleled adventure experiences.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=800",
                             Latitude = 20.0,
                             Longitude = 50.0,
@@ -852,10 +849,12 @@ namespace DunesOfArabia.Migrations
                             Category = "Desert",
                             Climate = "Hot, Dry",
                             Cost = 900m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Dramatic red-sand valleys and towering sandstone pillars stretching to the horizon.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1519671282429-b44b0de7773e?w=800",
                             Latitude = 29.575500000000002,
                             Longitude = 35.423699999999997,
@@ -872,10 +871,12 @@ namespace DunesOfArabia.Migrations
                             Category = "Desert",
                             Climate = "Hot, Arid",
                             Cost = 750m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Vast crescent-shaped dunes with striking reddish-orange sands unique to northern Arabia.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1542401886-65d6c61db217?w=800",
                             Latitude = 28.0,
                             Longitude = 41.0,
@@ -892,10 +893,12 @@ namespace DunesOfArabia.Migrations
                             Category = "Mountain",
                             Climate = "Mild, Temperate",
                             Cost = 650m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Lush green mountains with a cooler climate, terraced farms, and breathtaking natural landscapes.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800",
                             Latitude = 18.2164,
                             Longitude = 42.505299999999998,
@@ -912,10 +915,12 @@ namespace DunesOfArabia.Migrations
                             Category = "Mountain",
                             Climate = "Mild",
                             Cost = 400m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Mountain resort city famous for its rose gardens, cool summer retreats, and pleasant weather year-round.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800",
                             Latitude = 21.270299999999999,
                             Longitude = 40.415799999999997,
@@ -930,22 +935,14 @@ namespace DunesOfArabia.Migrations
                             Id = 12,
                             BestSeason = "October to April",
                             Category = "Nature",
-<<<<<<< Updated upstream
-                            Climate = "Hot",
-                            Cost = 200m,
-                            Description = "Dramatic cliff with panoramic views",
-                            ImageUrl = "edge.jpg",
-                            Latitude = 24.670000000000002,
-                            Longitude = 45.670000000000002,
-                            Name = "Edge of the World",
-                            Province = "Riyadh",
-=======
                             Climate = "Hot, Humid",
                             Cost = 850m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Pristine coral reefs, crystal-clear waters, and rare wildlife in a protected Red Sea marine reserve.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800",
                             Latitude = 16.699999999999999,
                             Longitude = 41.966700000000003,
@@ -962,10 +959,12 @@ namespace DunesOfArabia.Migrations
                             Category = "Nature",
                             Climate = "Hot, Arid",
                             Cost = 350m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "The world's largest oasis with sprawling date palm gardens and natural artesian springs.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800",
                             Latitude = 25.381399999999999,
                             Longitude = 49.586399999999998,
@@ -982,10 +981,12 @@ namespace DunesOfArabia.Migrations
                             Category = "Coastal",
                             Climate = "Hot, Humid",
                             Cost = 2200m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Pristine islands and turquoise waters home to a new world-class luxury eco-tourism destination.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=800",
                             Latitude = 28.0,
                             Longitude = 35.149999999999999,
@@ -1002,10 +1003,12 @@ namespace DunesOfArabia.Migrations
                             Category = "Coastal",
                             Climate = "Hot, Humid",
                             Cost = 500m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "A laid-back Red Sea city with beautiful coral reefs, clear waters, and a charming historic old town.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800",
                             Latitude = 24.089300000000001,
                             Longitude = 38.061799999999998,
@@ -1022,10 +1025,12 @@ namespace DunesOfArabia.Migrations
                             Category = "Coastal",
                             Climate = "Hot, Humid",
                             Cost = 300m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Vibrant waterfront promenade with fresh seafood, mangrove walks, and island day trips.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800",
                             Latitude = 16.889199999999999,
                             Longitude = 42.551099999999998,
@@ -1042,10 +1047,12 @@ namespace DunesOfArabia.Migrations
                             Category = "Urban",
                             Climate = "Hot, Humid",
                             Cost = 550m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "A modern city on the Arabian Gulf known for its waterfront promenade and cosmopolitan dining.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800",
                             Latitude = 26.217199999999998,
                             Longitude = 50.197099999999999,
@@ -1062,10 +1069,12 @@ namespace DunesOfArabia.Migrations
                             Category = "Urban",
                             Climate = "Hot, Arid",
                             Cost = 1800m,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "The future city of Saudi Arabia — a futuristic mega-project amidst dramatic desert and coastal scenery.",
                             HighlightsJson = "[]",
                             ImageGallery = "[]",
+                            ImageGalleryJson = "",
                             ImageUrl = "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800",
                             Latitude = 28.033899999999999,
                             Longitude = 35.513599999999997,
@@ -1073,7 +1082,6 @@ namespace DunesOfArabia.Migrations
                             Province = "Tabuk Region",
                             Rating = 4.5999999999999996,
                             Temperature = "15°C – 40°C",
->>>>>>> Stashed changes
                             VisaInfo = "Tourist Visa Available"
                         });
                 });
@@ -1092,7 +1100,7 @@ namespace DunesOfArabia.Migrations
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
-                    b.PrimitiveCollection<string>("Interests")
+                    b.Property<string>("Interests")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -1116,6 +1124,8 @@ namespace DunesOfArabia.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DestinationId");
+
                     b.ToTable("Itineraries");
                 });
 
@@ -1130,12 +1140,12 @@ namespace DunesOfArabia.Migrations
                     b.Property<bool>("IsPacked")
                         .HasColumnType("bit");
 
-                    b.Property<int>("ItineraryId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
+                    b.Property<string>("ItemName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ItineraryId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -1152,7 +1162,7 @@ namespace DunesOfArabia.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("ActivityId")
+                    b.Property<int?>("ActivityId")
                         .HasColumnType("int");
 
                     b.Property<string>("Comment")
@@ -1162,23 +1172,26 @@ namespace DunesOfArabia.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("DestinationId")
+                    b.Property<int?>("DestinationId")
                         .HasColumnType("int");
 
-                    b.Property<int>("StarRating")
+                    b.Property<int?>("DestinationId1")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("StarRating")
+                        .HasColumnType("decimal(3,1)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("DestinationId");
+
+                    b.HasIndex("DestinationId1");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Reviews");
                 });
@@ -1194,13 +1207,20 @@ namespace DunesOfArabia.Migrations
                     b.Property<int>("DestinationId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("DestinationId1")
+                        .HasColumnType("int");
+
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("DestinationId");
+
+                    b.HasIndex("DestinationId1");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("UserFavorites");
                 });
@@ -1349,6 +1369,12 @@ namespace DunesOfArabia.Migrations
                         .HasForeignKey("DestinationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("DunesOfArabia.Models.Destination", "Destination")
+                        .WithMany()
+                        .HasForeignKey("DestinationId1");
+
+                    b.Navigation("Destination");
                 });
 
             modelBuilder.Entity("DunesOfArabia.Models.Booking", b =>
@@ -1388,12 +1414,23 @@ namespace DunesOfArabia.Migrations
                     b.Navigation("Itinerary");
                 });
 
+            modelBuilder.Entity("DunesOfArabia.Models.Itinerary", b =>
+                {
+                    b.HasOne("DunesOfArabia.Models.Destination", "Destination")
+                        .WithMany()
+                        .HasForeignKey("DestinationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Destination");
+                });
+
             modelBuilder.Entity("DunesOfArabia.Models.PackingItem", b =>
                 {
                     b.HasOne("DunesOfArabia.Models.Itinerary", "Itinerary")
                         .WithMany("PackingItems")
                         .HasForeignKey("ItineraryId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Itinerary");
@@ -1404,8 +1441,21 @@ namespace DunesOfArabia.Migrations
                     b.HasOne("DunesOfArabia.Models.Destination", null)
                         .WithMany()
                         .HasForeignKey("DestinationId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("DunesOfArabia.Models.Destination", "Destination")
+                        .WithMany()
+                        .HasForeignKey("DestinationId1");
+
+                    b.HasOne("DunesOfArabia.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Destination");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("DunesOfArabia.Models.UserFavorite", b =>
@@ -1415,6 +1465,20 @@ namespace DunesOfArabia.Migrations
                         .HasForeignKey("DestinationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("DunesOfArabia.Models.Destination", "Destination")
+                        .WithMany()
+                        .HasForeignKey("DestinationId1");
+
+                    b.HasOne("DunesOfArabia.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Destination");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

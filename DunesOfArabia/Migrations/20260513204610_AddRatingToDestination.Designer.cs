@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DunesOfArabia.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260510182715_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260513204610_AddRatingToDestination")]
+    partial class AddRatingToDestination
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -309,6 +309,9 @@ namespace DunesOfArabia.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<double>("Rating")
+                        .HasColumnType("float");
+
                     b.Property<string>("VisaInfo")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -330,6 +333,7 @@ namespace DunesOfArabia.Migrations
                             Longitude = 37.920000000000002,
                             Name = "AlUla",
                             Province = "Medina",
+                            Rating = 0.0,
                             VisaInfo = "Tourist Visa Available"
                         },
                         new
@@ -344,6 +348,7 @@ namespace DunesOfArabia.Migrations
                             Longitude = 45.670000000000002,
                             Name = "Edge of the World",
                             Province = "Riyadh",
+                            Rating = 0.0,
                             VisaInfo = "Tourist Visa Available"
                         });
                 });

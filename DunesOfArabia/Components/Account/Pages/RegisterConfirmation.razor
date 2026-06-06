@@ -1,4 +1,4 @@
-﻿@page "/Account/RegisterConfirmation"
+@page "/Account/RegisterConfirmation"
 
 @using System.Text
 @using Microsoft.AspNetCore.Identity
@@ -10,23 +10,189 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Register confirmation</PageTitle>
+<PageTitle>Almost There! – Dunes Of Arabia</PageTitle>
 
-<h1>Register confirmation</h1>
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-<StatusMessage Message="@statusMessage" />
+    .auth-page {
+        min-height: 100vh;
+        background: radial-gradient(ellipse at 60% 40%, #E8D9C5 0%, #DFD0B8 50%, #D4C4A8 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        font-family: 'Inter', 'Segoe UI', sans-serif;
+    }
 
-@if (emailConfirmationLink is not null)
-{
-    <p>
-        This app does not currently have a real email sender registered, see <a href="https://aka.ms/aspaccountconf">these docs</a> for how to configure a real email sender.
-        Normally this would be emailed: <a href="@emailConfirmationLink">Click here to confirm your account</a>
-    </p>
-}
-else
-{
-    <p role="alert">Please check your email to confirm your account.</p>
-}
+    .auth-brand { text-align: center; margin-bottom: 2rem; }
+    .auth-brand h1 {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 2.6rem;
+        font-weight: 700;
+        color: #7B2D10;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 0.4rem;
+    }
+    .auth-brand p { font-size: 1rem; color: #8B6650; }
+
+    .auth-card {
+        background: #FFFFFF;
+        border-radius: 16px;
+        padding: 3rem;
+        width: 100%;
+        max-width: 540px;
+        box-shadow: 0 4px 40px rgba(100, 50, 20, 0.10);
+        text-align: center;
+    }
+
+    .card-icon { font-size: 4rem; margin-bottom: 1.25rem; }
+
+    .card-title {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.85rem;
+        font-weight: 600;
+        color: #1C0F07;
+        margin-bottom: 1rem;
+    }
+
+    .card-body { font-size: 0.95rem; color: #5A3E30; line-height: 1.7; margin-bottom: 1.5rem; }
+
+    .step-list {
+        background: #FBF7F2;
+        border: 1px solid #E5D8C8;
+        border-radius: 10px;
+        padding: 1.25rem 1.5rem;
+        text-align: left;
+        margin-bottom: 2rem;
+    }
+
+    .step-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 8px 0;
+        font-size: 0.875rem;
+        color: #5A3E30;
+        border-bottom: 1px solid #F0E6D8;
+    }
+
+    .step-item:last-child { border-bottom: none; }
+
+    .step-num {
+        width: 24px;
+        height: 24px;
+        background: #7B2D10;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    /* Dev helper — shown only when real email sender not configured */
+    .dev-box {
+        background: #EFF6FF;
+        border: 1px solid #BFDBFE;
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        text-align: left;
+        margin-bottom: 2rem;
+        font-size: 0.85rem;
+        color: #1E40AF;
+        line-height: 1.6;
+    }
+
+    .dev-box strong { color: #1D4ED8; }
+    .dev-box a { color: #1D4ED8; font-weight: 600; word-break: break-all; }
+
+    .btn-secondary {
+        display: inline-block;
+        padding: 13px 32px;
+        background: transparent;
+        color: #7B2D10;
+        border: 2px solid #7B2D10;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background 0.2s, color 0.2s;
+    }
+    .btn-secondary:hover { background: #7B2D10; color: white; }
+
+    @@media (max-width: 600px) {
+        .auth-card { padding: 2.5rem 1.75rem; }
+        .auth-brand h1 { font-size: 2rem; }
+    }
+</style>
+
+<div class="auth-page">
+
+    <div class="auth-brand">
+        <h1>Saudi Heritage</h1>
+        <p>Dunes of Arabia · Travel Platform</p>
+    </div>
+
+    <div class="auth-card">
+
+        @if (statusMessage != null)
+        {
+            <div style="background:#FEF2F2;color:#991B1B;border:1px solid #FCA5A5;border-radius:8px;padding:.85rem 1rem;margin-bottom:1.5rem;font-size:.875rem;">
+                ⚠️ @statusMessage
+            </div>
+        }
+
+        @if (emailConfirmationLink is not null)
+        {
+            <!-- DEV MODE: no real email sender configured -->
+            <div class="card-icon">🛠️</div>
+            <h2 class="card-title">Dev Mode: Confirm Now</h2>
+            <p class="card-body">
+                No real email sender is configured. Click the link below to manually confirm your account during development.
+            </p>
+            <div class="dev-box">
+                <strong>⚠️ Development only — remove before going live</strong><br /><br />
+                <a href="@emailConfirmationLink">Click here to confirm your account →</a>
+            </div>
+        }
+        else
+        {
+            <div class="card-icon">📧</div>
+            <h2 class="card-title">Almost There!</h2>
+            <p class="card-body">
+                Your account has been created. Please verify your email address to activate it and start exploring Saudi Arabia.
+            </p>
+
+            <div class="step-list">
+                <div class="step-item">
+                    <div class="step-num">1</div>
+                    <span>Check your inbox for an email from <strong>Dunes of Arabia</strong></span>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">2</div>
+                    <span>Click the <strong>Confirm Email</strong> link in the message</span>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">3</div>
+                    <span>Return here and <strong>Sign In</strong> to begin your adventure</span>
+                </div>
+            </div>
+        }
+
+        <a href="/Account/Login" class="btn-secondary">Back to Sign In</a>
+
+    </div>
+
+</div>
 
 @code {
     private string? emailConfirmationLink;
@@ -53,11 +219,10 @@ else
         if (user is null)
         {
             HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-            statusMessage = "Error finding user for unspecified email";
+            statusMessage = "Error: could not find user for this email address.";
         }
         else if (EmailSender is IdentityNoOpEmailSender)
         {
-            // Once you add a real email sender, you should remove this code that lets you confirm the account
             var userId = await UserManager.GetUserIdAsync(user);
             var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
             code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));

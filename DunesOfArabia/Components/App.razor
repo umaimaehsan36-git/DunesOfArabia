@@ -1,8 +1,5 @@
-@* FIX 4: Added @using Microsoft.AspNetCore.Components.Web at the top of App.razor
-   as a safety net. App.razor sits outside the normal _Imports.razor cascade in some
-   project structures, so HeadOutlet (which lives in that namespace) wasn't resolving,
-   giving: "Found markup element with unexpected name 'HeadOutlet'" *@
 @using Microsoft.AspNetCore.Components.Web
+@using DunesOfArabia.Components
 
 <!DOCTYPE html>
 <html lang="en">
@@ -14,8 +11,9 @@
     <link rel="icon" type="image/png" href="favicon.png" />
     <HeadOutlet />
 </head>
+
 <body>
     <Routes />
-    <script src="_framework/blazor.web.js"></script>
+    <script src="_framework/blazor.server.js"></script>
 </body>
 </html>

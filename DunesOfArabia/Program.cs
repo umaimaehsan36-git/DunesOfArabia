@@ -1,11 +1,16 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+using Blazored.LocalStorage;
 using DunesOfArabia.Components;
 using DunesOfArabia.Components.Account;
 using DunesOfArabia.Data;
 using DunesOfArabia.Models;
+using DunesOfArabia.Services;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+using Resend;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,8 +19,11 @@ var builder = WebApplication.CreateBuilder(args);
 // DATABASE
 // =====================================================
 builder.Services.AddDbContext<AppDbContext>(options =>
+{
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Configuration.GetConnectionString("DefaultConnection"));
+
+});
 
 // =====================================================
 // IDENTITY
@@ -23,7 +31,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
-
     options.Password.RequireDigit = true;
     options.Password.RequiredLength = 6;
     options.Password.RequireUppercase = false;
@@ -31,8 +38,10 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<AppDbContext>();
 
+builder.Services.AddScoped<RoleManager<IdentityRole>>();
+
 // =====================================================
-// FIX: Tell Identity to use YOUR Blazor login page
+// COOKIE SETTINGS
 // =====================================================
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -42,15 +51,14 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 // =====================================================
-// AUTHENTICATION
+// JWT AUTHENTICATION
 // =====================================================
+var jwtKey = builder.Configuration["Jwt:SecretKey"]
+    ?? throw new InvalidOperationException("JWT SecretKey missing in appsettings.json");
+
 builder.Services.AddAuthentication()
     .AddJwtBearer(options =>
     {
-        var jwtKey = builder.Configuration["Jwt:SecretKey"]
-                     ?? throw new InvalidOperationException(
-                         "JWT SecretKey is not configured. Add 'Jwt:SecretKey' to appsettings.json or user secrets.");
-
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = false,
@@ -58,46 +66,121 @@ builder.Services.AddAuthentication()
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtKey))
+                                           Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.Zero
         };
     });
 
 // =====================================================
-// AUTHORIZATION
+// AUTHORIZATION POLICIES
 // =====================================================
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("UserOrAdmin", policy => policy.RequireRole("User", "Admin"));
+});
 
 // =====================================================
-// BLAZOR (.NET 8)
+// BLAZOR
 // =====================================================
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddScoped<AuthenticationStateProvider,
+    IdentityRevalidatingAuthenticationStateProvider>();
+
+builder.Services.AddCascadingAuthenticationState();
+
 // =====================================================
-// FIX: Register Identity helper services
-// MUST be before builder.Build()
+// IDENTITY HELPER SERVICES
 // =====================================================
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<IdentityUserAccessor>();
 
 // =====================================================
-// CONTROLLERS
+// EMAIL - RESEND
+// =====================================================
+builder.Services.AddOptions<ResendClientOptions>()
+    .Configure(options =>
+    {
+        options.ApiToken = builder.Configuration["Resend:ApiKey"]
+            ?? throw new InvalidOperationException(
+                "Resend API key missing. Run: dotnet user-secrets set \"Resend:ApiKey\" \"re_xxx\"");
+    });
+builder.Services.AddHttpClient<ResendClient>();
+builder.Services.AddTransient<IResend, ResendClient>();
+builder.Services.AddTransient<IEmailSender<ApplicationUser>, ResendEmailSender>();
+
+// =====================================================
+// APPLICATION SERVICES
+// =====================================================
+builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IDestinationService, DestinationService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IActivityService, ActivityService>();
+builder.Services.AddScoped<IItineraryService, ItineraryService>();
+builder.Services.AddScoped<IUserFavoriteService, UserFavoriteService>();
+builder.Services.AddScoped<IComplaintService, ComplaintService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+
+// =====================================================
+// BLAZORED LOCAL STORAGE
+// =====================================================
+builder.Services.AddBlazoredLocalStorage();
+
+// =====================================================
+// CONTROLLERS + SWAGGER
 // =====================================================
 builder.Services.AddControllers();
-
-// =====================================================
-// SWAGGER
-// =====================================================
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Dunes of Arabia API",
+        Version = "v1",
+        Description = "Saudi Heritage Tourism Platform - REST API"
+    });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Description = "Enter JWT token"
+    });
+
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
+    });
+});
 
 // =====================================================
-// NOTHING GOES ABOVE THIS LINE AFTER REGISTERING SERVICES
+// BUILD
 // =====================================================
 var app = builder.Build();
 
 // =====================================================
-// MIDDLEWARE
+// SEED ROLES ON STARTUP
+// =====================================================
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    foreach (var role in new[] { "Admin", "User" })
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+            await roleManager.CreateAsync(new IdentityRole(role));
+    }
+}
+
+// =====================================================
+// MIDDLEWARE PIPELINE
 // =====================================================
 if (!app.Environment.IsDevelopment())
 {
@@ -107,12 +190,15 @@ if (!app.Environment.IsDevelopment())
 else
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Dunes of Arabia API v1");
+        options.ConfigObject.AdditionalItems["persistAuthorization"] = true;
+    });
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
 
 app.UseAuthentication();
@@ -121,19 +207,13 @@ app.UseAuthorization();
 app.UseAntiforgery();
 
 // =====================================================
-// MAP CONTROLLERS
+// ROUTE MAPPING
 // =====================================================
 app.MapControllers();
 
-// =====================================================
-// BLAZOR APP
-// =====================================================
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// =====================================================
-// FIX: Map Identity endpoints
-// =====================================================
 app.MapAdditionalIdentityEndpoints();
 
 app.Run();
